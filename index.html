@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snowflake ML End-to-End Enablement</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --sf-blue: #29B5E8;
+            --sf-dark: #1B2A4A;
+            --sf-darker: #0F1B2D;
+            --sf-light: #E8F4FD;
+            --sf-accent: #7C3AED;
+            --sf-green: #10B981;
+            --sf-orange: #F59E0B;
+            --sf-red: #EF4444;
+            --sf-gray: #6B7280;
+            --sidebar-width: 280px;
+            --transition: 0.3s ease;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--sf-darker);
+            color: #E5E7EB;
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: var(--sidebar-width);
+            background: var(--sf-dark);
+            border-right: 1px solid rgba(41, 181, 232, 0.2);
+            overflow-y: auto;
+            padding: 1rem 0;
+            flex-shrink: 0;
+            transition: var(--transition);
+        }
+
+        .sidebar-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(41, 181, 232, 0.15);
+            margin-bottom: 1rem;
+        }
+
+        .sidebar-header h2 {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--sf-blue);
+        }
+
+        .sidebar-header .logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.25rem;
+        }
+
+        .nav-section {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-section-title {
+            padding: 0.5rem 1.5rem;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--sf-gray);
+            font-weight: 600;
+        }
+
+        .nav-item {
+            padding: 0.6rem 1.5rem;
+            cursor: pointer;
+            font-size: 0.85rem;
+            color: #9CA3AF;
+            transition: var(--transition);
+            border-left: 3px solid transparent;
+        }
+
+        .nav-item:hover {
+            background: rgba(41, 181, 232, 0.08);
+            color: #E5E7EB;
+        }
+
+        .nav-item.active {
+            background: rgba(41, 181, 232, 0.12);
+            color: var(--sf-blue);
+            border-left-color: var(--sf-blue);
+            font-weight: 500;
+        }
+
+        .nav-item.sub {
+            padding-left: 2.5rem;
+            font-size: 0.8rem;
+        }
+
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            scroll-behavior: smooth;
+        }
+
+        .slide {
+            height: 100vh;
+            padding: 2.5rem 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-bottom: 1px solid rgba(41, 181, 232, 0.1);
+            overflow-y: auto;
+        }
+
+        .slide.visible .anim-fade {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .anim-fade {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1), transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .anim-fade.d1 { transition-delay: 0.05s; }
+        .anim-fade.d2 { transition-delay: 0.12s; }
+        .anim-fade.d3 { transition-delay: 0.2s; }
+        .anim-fade.d4 { transition-delay: 0.3s; }
+        .anim-fade.d5 { transition-delay: 0.4s; }
+        .anim-fade.d6 { transition-delay: 0.5s; }
+        .anim-fade.d7 { transition-delay: 0.6s; }
+        .anim-fade.d8 { transition-delay: 0.7s; }
+
+        .slide.visible .anim-scale {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .anim-scale {
+            opacity: 0;
+            transform: scale(0.92);
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .slide.visible .anim-slide-left {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .anim-slide-left {
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .slide.visible .anim-slide-right {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .anim-slide-right {
+            opacity: 0;
+            transform: translateX(30px);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .slide.visible .anim-blur {
+            opacity: 1;
+            filter: blur(0);
+            transform: translateY(0);
+        }
+
+        .anim-blur {
+            opacity: 0;
+            filter: blur(4px);
+            transform: translateY(10px);
+            transition: opacity 0.6s ease, filter 0.6s ease, transform 0.6s ease;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(41, 181, 232, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(41, 181, 232, 0.4); }
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% center; }
+            100% { background-position: 200% center; }
+        }
+
+        @keyframes typewriter {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        @keyframes blink {
+            50% { border-color: transparent; }
+        }
+
+        .slide h1 {
+            font-size: 2.4rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.4rem;
+            background: linear-gradient(135deg, var(--sf-blue), var(--sf-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .slide h2 {
+            font-size: 1.7rem;
+            color: #fff;
+            margin-bottom: 0.6rem;
+        }
+
+        .slide h3 {
+            font-size: 1.15rem;
+            color: var(--sf-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .slide p {
+            font-size: 0.92rem;
+            line-height: 1.6;
+            max-width: 900px;
+            color: #D1D5DB;
+            margin-bottom: 0.6rem;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .card {
+            background: rgba(41, 181, 232, 0.05);
+            border: 1px solid rgba(41, 181, 232, 0.15);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .card:hover {
+            border-color: var(--sf-blue);
+            transform: translateY(-3px) scale(1.01);
+            box-shadow: 0 10px 30px rgba(41, 181, 232, 0.12);
+        }
+
+        .card h4 {
+            color: var(--sf-blue);
+            margin-bottom: 0.3rem;
+            font-size: 0.95rem;
+        }
+
+        .card p {
+            font-size: 0.82rem;
+            color: #9CA3AF;
+            line-height: 1.5;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.2rem 0.6rem;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-blue { background: rgba(41, 181, 232, 0.2); color: var(--sf-blue); }
+        .badge-green { background: rgba(16, 185, 129, 0.2); color: var(--sf-green); }
+        .badge-purple { background: rgba(124, 58, 237, 0.2); color: var(--sf-accent); }
+        .badge-orange { background: rgba(245, 158, 11, 0.2); color: var(--sf-orange); }
+
+        pre {
+            background: #1E293B;
+            border: 1px solid rgba(41, 181, 232, 0.15);
+            border-radius: 8px;
+            padding: 0.9rem 1.1rem;
+            overflow-x: auto;
+            font-size: 0.78rem;
+            line-height: 1.5;
+            margin: 0.7rem 0;
+            max-width: 900px;
+            transition: all 0.3s ease;
+        }
+
+        pre:hover {
+            border-color: var(--sf-blue);
+            box-shadow: 0 4px 20px rgba(41, 181, 232, 0.1);
+        }
+
+        code {
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            color: #A5D6FF;
+        }
+
+        .keyword { color: #FF7B72; }
+        .string { color: #A5D6A7; }
+        .comment { color: #6B7280; font-style: italic; }
+        .func { color: #D2A8FF; }
+
+        .mermaid {
+            margin: 0.8rem 0;
+            text-align: center;
+        }
+
+        .comparison-table {
+            width: 100%;
+            max-width: 900px;
+            border-collapse: collapse;
+            margin: 0.8rem 0;
+        }
+
+        .comparison-table th, .comparison-table td {
+            padding: 0.5rem 0.8rem;
+            font-size: 0.85rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(41, 181, 232, 0.1);
+            transition: background 0.3s ease;
+        }
+
+        .comparison-table tr:hover td {
+            background: rgba(41, 181, 232, 0.05);
+        }
+
+        .comparison-table th {
+            background: rgba(41, 181, 232, 0.1);
+            color: var(--sf-blue);
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .comparison-table td {
+            font-size: 0.9rem;
+            color: #D1D5DB;
+        }
+
+        .hero-slide {
+            background: linear-gradient(135deg, var(--sf-darker) 0%, var(--sf-dark) 50%, var(--sf-darker) 100%);
+            text-align: center;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+            padding: 2rem 3rem;
+            min-height: 100vh;
+            max-height: 100vh;
+        }
+
+        .hero-slide::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 40%, rgba(41, 181, 232, 0.07) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(124, 58, 237, 0.05) 0%, transparent 40%);
+            animation: heroOrbit 20s linear infinite;
+        }
+
+        .hero-slide::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at 50% 50%, rgba(41, 181, 232, 0.03) 0%, transparent 70%);
+            animation: heroPulse 4s ease-in-out infinite;
+        }
+
+        @keyframes heroOrbit {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes heroPulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.1); }
+        }
+
+        .hero-slide > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero-slide h1 {
+            font-size: 3.5rem;
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
+            animation: heroTitle 1s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes heroTitle {
+            0% { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(4px); }
+            100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        }
+
+        .hero-slide .subtitle {
+            font-size: 1.15rem;
+            color: #9CA3AF;
+            max-width: 680px;
+            line-height: 1.7;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-tagline {
+            font-size: 0.9rem;
+            color: var(--sf-blue);
+            margin-top: 1rem;
+            font-weight: 500;
+            opacity: 0;
+            animation: fadeIn 0.8s ease 1.8s forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 0.8; }
+        }
+
+        .hero-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            justify-content: center;
+            margin: 1.2rem 0;
+        }
+
+        .hero-pills .pill {
+            opacity: 0;
+            animation: pillPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            padding: 0.4rem 1rem;
+            font-size: 0.82rem;
+        }
+
+        .hero-pills .pill:nth-child(1) { animation-delay: 0.6s; }
+        .hero-pills .pill:nth-child(2) { animation-delay: 0.7s; }
+        .hero-pills .pill:nth-child(3) { animation-delay: 0.8s; }
+        .hero-pills .pill:nth-child(4) { animation-delay: 0.9s; }
+        .hero-pills .pill:nth-child(5) { animation-delay: 1.0s; }
+        .hero-pills .pill:nth-child(6) { animation-delay: 1.1s; }
+        .hero-pills .pill:nth-child(7) { animation-delay: 1.2s; }
+
+        @keyframes pillPop {
+            0% { opacity: 0; transform: scale(0.5) translateY(10px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        .pill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin: 0.8rem 0;
+        }
+
+        .pill {
+            background: rgba(41, 181, 232, 0.1);
+            border: 1px solid rgba(41, 181, 232, 0.3);
+            padding: 0.35rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--sf-blue);
+            transition: all 0.3s ease;
+        }
+
+        .pill:hover {
+            background: rgba(41, 181, 232, 0.2);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(41, 181, 232, 0.2);
+        }
+
+        .flow-steps {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            margin: 0.8rem 0;
+        }
+
+        .flow-step {
+            background: rgba(41, 181, 232, 0.1);
+            border: 1px solid rgba(41, 181, 232, 0.2);
+            padding: 0.45rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #E5E7EB;
+            transition: all 0.3s ease;
+        }
+
+        .flow-step:hover {
+            background: rgba(41, 181, 232, 0.2);
+            border-color: var(--sf-blue);
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .flow-arrow {
+            color: var(--sf-blue);
+            font-size: 1.2rem;
+            animation: float 2s ease-in-out infinite;
+        }
+
+        .citations {
+            margin-top: 3rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(41, 181, 232, 0.1);
+            font-size: 0.8rem;
+            color: var(--sf-gray);
+        }
+
+        .citations a {
+            color: var(--sf-blue);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .citations a:hover {
+            text-decoration: underline;
+            color: #fff;
+        }
+
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(41, 181, 232, 0.08), rgba(124, 58, 237, 0.08));
+            border: 1px solid rgba(41, 181, 232, 0.2);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin: 0.8rem 0;
+            max-width: 900px;
+            transition: all 0.3s ease;
+        }
+
+        .highlight-box:hover {
+            border-color: rgba(41, 181, 232, 0.5);
+            box-shadow: 0 4px 20px rgba(41, 181, 232, 0.1);
+        }
+
+        .highlight-box h4 {
+            color: var(--sf-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        ul {
+            padding-left: 1.2rem;
+            margin: 0.4rem 0;
+        }
+
+        li {
+            margin-bottom: 0.3rem;
+            line-height: 1.5;
+            font-size: 0.88rem;
+            color: #D1D5DB;
+        }
+
+        .sidebar::-webkit-scrollbar, .main::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb, .main::-webkit-scrollbar-thumb {
+            background: rgba(41, 181, 232, 0.3);
+            border-radius: 3px;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .live-badge {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+            margin: 1.2rem 0;
+            max-width: 700px;
+        }
+
+        .stat-card {
+            text-align: center;
+            padding: 1rem 0.75rem;
+            border: 1px solid rgba(41, 181, 232, 0.15);
+            border-radius: 10px;
+            transition: all 0.4s ease;
+            opacity: 0;
+            animation: statReveal 0.6s ease forwards;
+        }
+
+        .stat-card:nth-child(1) { animation-delay: 1.2s; }
+        .stat-card:nth-child(2) { animation-delay: 1.35s; }
+        .stat-card:nth-child(3) { animation-delay: 1.5s; }
+        .stat-card:nth-child(4) { animation-delay: 1.65s; }
+
+        @keyframes statReveal {
+            0% { opacity: 0; transform: translateY(15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        .stat-card:hover {
+            border-color: var(--sf-blue);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(41, 181, 232, 0.15);
+        }
+
+        .stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--sf-blue), var(--sf-accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.15rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--sf-gray);
+        }
+
+        .context-box {
+            background: rgba(16, 185, 129, 0.05);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin: 0.8rem 0;
+            max-width: 900px;
+        }
+
+        .context-box h4 {
+            color: var(--sf-green);
+            margin-bottom: 0.5rem;
+        }
+
+        .context-box p {
+            color: #9CA3AF;
+            font-size: 0.95rem;
+        }
+
+        .warning-box {
+            background: rgba(245, 158, 11, 0.05);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            border-radius: 10px;
+            padding: 1rem 1.2rem;
+            margin: 0.8rem 0;
+            max-width: 900px;
+        }
+
+        .warning-box h4 {
+            color: var(--sf-orange);
+            margin-bottom: 0.5rem;
+        }
+
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 1.5rem 0;
+            max-width: 900px;
+        }
+
+        @media (max-width: 900px) {
+            .two-col { grid-template-columns: 1fr; }
+        }
+
+        .progress-bar {
+            height: 3px;
+            background: rgba(41, 181, 232, 0.1);
+            position: fixed;
+            top: 0;
+            left: var(--sidebar-width);
+            right: 0;
+            z-index: 100;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--sf-blue), var(--sf-accent));
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressBar"></div></div>
+
+    <nav class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">&#10052; Snowflake ML</div>
+            <h2>End-to-End Enablement</h2>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Overview</div>
+            <div class="nav-item active" data-slide="intro">Introduction</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Feature Engineering</div>
+            <div class="nav-item" data-slide="fs-overview">Feature Store</div>
+            <div class="nav-item sub" data-slide="fs-why">Why Snowflake Feature Store?</div>
+            <div class="nav-item sub" data-slide="fs-online-offline">Online vs Offline</div>
+            <div class="nav-item sub" data-slide="fs-versioning">Versioning</div>
+            <div class="nav-item sub" data-slide="fs-serving">Serving Features</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Datasets</div>
+            <div class="nav-item" data-slide="ds-why">Why Datasets?</div>
+            <div class="nav-item sub" data-slide="ds-explanation">Datasets Explained</div>
+            <div class="nav-item sub" data-slide="ds-versioning">Versioning Datasets</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Experiments</div>
+            <div class="nav-item" data-slide="exp-why">Why Experiment Tracking?</div>
+            <div class="nav-item sub" data-slide="exp-logging">Logging Metrics</div>
+            <div class="nav-item sub" data-slide="exp-promote">Promoting to Registry</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Model Training & Serving</div>
+            <div class="nav-item" data-slide="train-frameworks">Frameworks Supported</div>
+            <div class="nav-item sub" data-slide="train-compute">CPU & GPU Training</div>
+            <div class="nav-item sub" data-slide="train-distributed">Distributed Training</div>
+            <div class="nav-item sub" data-slide="train-mmt">Many Models Training</div>
+            <div class="nav-item sub" data-slide="train-hpo">Hyperparameter Tuning</div>
+            <div class="nav-item" data-slide="registry">Model Registry</div>
+            <div class="nav-item sub" data-slide="registry-deploy">Deploy Models</div>
+            <div class="nav-item sub" data-slide="registry-versioning">Versioning Models</div>
+            <div class="nav-item" data-slide="inference-batch">Batch Inference</div>
+            <div class="nav-item sub" data-slide="inference-online">Online Inference (SPCS)</div>
+            <div class="nav-item sub" data-slide="inference-rest">REST API Inference</div>
+            <div class="nav-item sub" data-slide="inference-sql">SQL API Inference</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Operationalize</div>
+            <div class="nav-item" data-slide="mljobs">ML Jobs</div>
+            <div class="nav-item sub" data-slide="mljobs-distributed">Distributed ML Jobs</div>
+            <div class="nav-item sub" data-slide="mljobs-pipelines">Create Pipelines</div>
+            <div class="nav-item sub" data-slide="mljobs-migrate">Migrate from Notebooks</div>
+            <div class="nav-item" data-slide="mlgateway">ML Gateway</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Monitor & Observability</div>
+            <div class="nav-item" data-slide="monitor-overview">Overview</div>
+            <div class="nav-item sub" data-slide="monitor-logs">Logs & Events</div>
+            <div class="nav-item sub" data-slide="monitor-drift">Drift Monitoring</div>
+            <div class="nav-item sub" data-slide="monitor-lineage">ML Lineage</div>
+        </div>
+
+        <div class="nav-section">
+            <div class="nav-section-title">Agentic ML</div>
+            <div class="nav-item" data-slide="agentic-why">Why Agents for ML</div>
+            <div class="nav-item sub" data-slide="agentic-inference">Inferencing via Agent</div>
+            <div class="nav-item sub" data-slide="agentic-observability">Agents for Observability</div>
+        </div>
+    </nav>
+
+    <main class="main" id="main">
+        <!-- INTRO -->
+        <section class="slide hero-slide" id="intro">
+            <h1>Snowflake ML<br>End-to-End</h1>
+            <p class="subtitle" style="opacity:0; animation: fadeIn 0.8s ease 0.4s forwards;">From feature engineering to production inference &mdash; the complete ML lifecycle on one governed platform.</p>
+            <div class="hero-pills">
+                <span class="pill">Feature Store</span>
+                <span class="pill">Datasets</span>
+                <span class="pill">Experiments</span>
+                <span class="pill">Model Registry</span>
+                <span class="pill">ML Jobs</span>
+                <span class="pill">Observability</span>
+                <span class="pill">Agentic ML</span>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-card">
+                    <div class="stat-number">9+</div>
+                    <div class="stat-label">Frameworks</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">3-7x</div>
+                    <div class="stat-label">Faster Training</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">10x</div>
+                    <div class="stat-label">Faster Inference</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">10x</div>
+                    <div class="stat-label">Agentic Productivity</div>
+                </div>
+            </div>
+            <p class="hero-tagline">Built natively in Snowflake &bull; Governed by RBAC &bull; Zero data movement</p>
+        </section>
+
+        <!-- FEATURE STORE OVERVIEW -->
+        <section class="slide" id="fs-overview">
+            <h2 class="anim-fade d1">Feature Store</h2>
+            <h3 class="anim-fade d2">Centralized Feature Management</h3>
+            <p class="anim-fade d3">The Snowflake Feature Store lets data scientists and ML engineers create, maintain, and use ML features entirely within Snowflake. At its core, a feature store is simply a Snowflake schema containing <strong>feature views</strong> &mdash; pipelines that transform raw data into reusable, governed features.</p>
+            <p class="anim-fade d3">Feature views can be <strong>Snowflake-managed</strong> (backed by Dynamic Tables that auto-refresh incrementally) or <strong>external</strong> (backed by views maintained by tools like dbt). Both types are organized by <strong>entities</strong> &mdash; logical concepts like "customer" or "product" that connect features to their subjects.</p>
+            <div class="mermaid anim-fade d4">
+                graph TD
+                    A[Raw Tables/Streams] --> B[Feature Views]
+                    B --> C[Managed - Dynamic Tables]
+                    B --> D[External - Views via dbt]
+                    C --> E[Training Datasets]
+                    D --> E
+                    E --> F[Model Training]
+                    C --> G[Online Serving]
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#29B5E8
+                    style C fill:#1E293B,stroke:#10B981
+                    style D fill:#1E293B,stroke:#F59E0B
+                    style E fill:#1E293B,stroke:#7C3AED
+                    style F fill:#1E293B,stroke:#7C3AED
+                    style G fill:#1E293B,stroke:#10B981
+            </div>
+            <div class="context-box anim-fade d5">
+                <h4>Backend Implementation</h4>
+                <p>Feature store = schema, feature view = dynamic table or view, entity = tag, feature = column. All standard Snowflake RBAC and governance applies automatically.</p>
+            </div>
+        </section>
+
+        <!-- WHY FEATURE STORE -->
+        <section class="slide" id="fs-why">
+            <h2 class="anim-fade d1">Why Snowflake Feature Store?</h2>
+            <p class="anim-fade d2">Traditional ML teams face common challenges: feature duplication across teams, training-serving skew, no governance over who accesses what features, and manual refresh pipelines. The Snowflake Feature Store addresses all of these by treating features as first-class managed objects.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d2">
+                    <h4>&#128274; Governance & Security</h4>
+                    <p>Data never leaves Snowflake. Fine-grained RBAC controls access to features. Audit who uses which features and when.</p>
+                </div>
+                <div class="card anim-fade d3">
+                    <h4>&#9851; Reusability</h4>
+                    <p>Standardize feature transformations in a central repository. Teams share features instead of rebuilding them, reducing duplication and inconsistency.</p>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>&#9889; Auto-Refresh</h4>
+                    <p>Managed feature views (Dynamic Tables) auto-update incrementally as new source data arrives. No cron jobs, no orchestration code.</p>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>&#128337; Point-in-Time Correctness</h4>
+                    <p>Backfill and PIT-correct features with ASOF JOIN. Prevents data leakage in time-series ML by ensuring features reflect only past information.</p>
+                </div>
+                <div class="card anim-fade d6">
+                    <h4>&#128269; Discoverability</h4>
+                    <p>Snowsight UI for searching, browsing, and discovering features across your organization. Find features before creating new ones.</p>
+                </div>
+                <div class="card anim-fade d7">
+                    <h4>&#128279; Lineage Integration</h4>
+                    <p>Automatic ML Lineage tracing from source tables to features to datasets to models. Know exactly what data trained which model.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- ONLINE VS OFFLINE -->
+        <section class="slide" id="fs-online-offline">
+            <h2 class="anim-fade d1">Online vs Offline Feature Serving</h2>
+            <p class="anim-fade d2">The Feature Store supports two serving modes. <strong>Offline serving</strong> generates point-in-time correct datasets for model training and batch inference. <strong>Online serving</strong> provides low-latency feature lookups for real-time inference services, eliminating the need for callers to compute or pass all features.</p>
+            <table class="comparison-table anim-fade d3">
+                <thead>
+                    <tr><th>Aspect</th><th>Offline (Batch)</th><th>Online (Low-Latency)</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Use Case</td><td>Training, batch inference</td><td>Real-time serving, REST APIs</td></tr>
+                    <tr><td>Latency</td><td>Seconds to minutes</td><td>Milliseconds (p99)</td></tr>
+                    <tr><td>Storage</td><td>Dynamic Tables / Views</td><td>Key-Value lookup optimized</td></tr>
+                    <tr><td>Freshness</td><td>Schedule-based refresh</td><td>Near real-time with streaming</td></tr>
+                    <tr><td>API</td><td><code>generate_training_set()</code></td><td><code>retrieve_online_features()</code></td></tr>
+                    <tr><td>Consistency</td><td>Point-in-time via ASOF JOIN</td><td>Latest value for entity key</td></tr>
+                </tbody>
+            </table>
+            <div class="highlight-box anim-fade d4">
+                <h4>Key Insight</h4>
+                <p>Online serving enables models deployed as inference services (SPCS) to retrieve fresh features at prediction time without requiring all inputs from the caller. The model uses ML Lineage to know which features it needs and fetches them automatically.</p>
+            </div>
+        </section>
+
+        <!-- FS VERSIONING -->
+        <section class="slide" id="fs-versioning">
+            <h2 class="anim-fade d1">Feature Versioning</h2>
+            <p class="anim-fade d2">Feature views support versioning to allow safe evolution of feature transformations without breaking downstream models. When you update a transformation (e.g., changing a window size or adding normalization), you register a new version. Existing models continue to use the old version until explicitly migrated.</p>
+            <pre class="anim-fade d3"><code><span class="keyword">from</span> snowflake.ml.feature_store <span class="keyword">import</span> FeatureStore, FeatureView, Entity
+
+fs = FeatureStore(session=session, database=<span class="string">"ML"</span>, schema=<span class="string">"FEATURES"</span>)
+
+<span class="comment"># Define entity (the subject of features)</span>
+customer_entity = Entity(name=<span class="string">"CUSTOMER"</span>, join_keys=[<span class="string">"CUSTOMER_ID"</span>])
+fs.register_entity(customer_entity)
+
+<span class="comment"># Create a new version of an existing feature view</span>
+fv = FeatureView(
+    name=<span class="string">"customer_features"</span>,
+    entities=[customer_entity],
+    feature_df=new_transformation_df,
+    refresh_freq=<span class="string">"1 hour"</span>,
+    desc=<span class="string">"Updated aggregation window from 7d to 30d"</span>
+)
+
+<span class="comment"># Register as a new version - old version remains active</span>
+fs.register_feature_view(feature_view=fv, version=<span class="string">"v2"</span>)</code></pre>
+            <div class="context-box anim-fade d4">
+                <h4>Version Coexistence</h4>
+                <p>Multiple versions of a feature view can exist simultaneously. This enables A/B testing different feature definitions and gradual migration without downtime.</p>
+            </div>
+        </section>
+
+        <!-- FS SERVING -->
+        <section class="slide" id="fs-serving">
+            <h2 class="anim-fade d1">Serving Features</h2>
+            <p class="anim-fade d2">The Feature Store provides two primary APIs for consuming features. <code>generate_training_set()</code> creates point-in-time correct datasets for training by joining features to a "spine" DataFrame using temporal ASOF joins. <code>retrieve_online_features()</code> performs low-latency lookups for real-time inference.</p>
+            <h3 class="anim-fade d3">Generate Training Sets</h3>
+            <pre class="anim-fade d3"><code><span class="comment"># Point-in-time correct training set generation</span>
+<span class="comment"># spine_df contains entity keys + timestamps + labels</span>
+<span class="comment"># Features are joined as-of the spine timestamp (no future leakage)</span>
+training_data = fs.<span class="func">generate_training_set</span>(
+    spine_df=label_df,
+    features=[customer_fv, transaction_fv],
+    spine_timestamp_col=<span class="string">"EVENT_TIMESTAMP"</span>,
+    spine_label_cols=[<span class="string">"LABEL"</span>]
+)
+
+<span class="comment"># Result: DataFrame with all features joined correctly in time</span>
+training_data.to_pandas().head()</code></pre>
+            <h3 class="anim-fade d4">Online Feature Retrieval</h3>
+            <pre class="anim-fade d4"><code><span class="comment"># Low-latency lookup for real-time inference</span>
+<span class="comment"># Pass entity keys, get back latest feature values</span>
+features = fs.<span class="func">retrieve_online_features</span>(
+    feature_views=[customer_fv],
+    entity_rows=entity_df  <span class="comment"># DataFrame with CUSTOMER_ID column</span>
+)
+<span class="comment"># Returns features in milliseconds for serving</span></code></pre>
+        </section>
+
+        <!-- DATASETS WHY -->
+        <section class="slide" id="ds-why">
+            <h2 class="anim-fade d1">Why Datasets?</h2>
+            <p class="anim-fade d2">In ML, data changes constantly. Without proper dataset management, you cannot reproduce experiments, trace what data trained a model, or guarantee consistency across team members. Snowflake Datasets solve this by providing immutable, versioned snapshots that are first-class Snowflake objects.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>&#128247; Reproducibility</h4>
+                    <p>Immutable snapshots guarantee that any experiment can be exactly reproduced months or years later, even as source data changes.</p>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>&#128279; Lineage Tracking</h4>
+                    <p>Automatic tracking from source tables through features to the dataset used for training. Know exactly what data produced which model.</p>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>&#9889; Efficient Access</h4>
+                    <p>Optimized for distributed training with PyTorch, TensorFlow, and Snowpark ML via DataConnector. Stream data efficiently without loading everything into memory.</p>
+                </div>
+                <div class="card anim-fade d6">
+                    <h4>&#128230; Version Control</h4>
+                    <p>Multiple dataset versions within a single named object. Compare model performance across data versions to understand impact of data changes.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- DATASETS EXPLAINED -->
+        <section class="slide" id="ds-explanation">
+            <h2 class="anim-fade d1">Snowflake Datasets</h2>
+            <p class="anim-fade d2">Datasets are immutable, versioned snapshots of data optimized for ML workloads. They bridge the gap between data engineering and model training. Once created, a dataset version is frozen &mdash; even if the underlying source data changes, your dataset remains constant. This is critical for regulatory compliance, model audits, and debugging production issues.</p>
+            <div class="mermaid anim-fade d3">
+                graph LR
+                    A[Feature Store] --> B[Dataset v1]
+                    A --> C[Dataset v2]
+                    B --> D[Model v1]
+                    C --> E[Model v2]
+                    B --> F[DataConnector]
+                    F --> G[PyTorch DataLoader]
+                    F --> H[TF Dataset]
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#7C3AED
+                    style C fill:#1E293B,stroke:#7C3AED
+                    style D fill:#1E293B,stroke:#10B981
+                    style E fill:#1E293B,stroke:#10B981
+                    style F fill:#1E293B,stroke:#F59E0B
+                    style G fill:#1E293B,stroke:#F59E0B
+                    style H fill:#1E293B,stroke:#F59E0B
+            </div>
+            <pre class="anim-fade d4"><code><span class="keyword">from</span> snowflake.ml.dataset <span class="keyword">import</span> Dataset
+
+<span class="comment"># Create a dataset from a DataFrame or Feature Store output</span>
+ds = Dataset.create(
+    session=session,
+    name=<span class="string">"churn_training"</span>,
+    version=<span class="string">"v1"</span>,
+    input_dataframe=training_df
+)
+
+<span class="comment"># Load for PyTorch distributed training</span>
+connector = ds.to_torch_datapipe(batch_size=64)
+
+<span class="comment"># Or load for TensorFlow</span>
+tf_ds = ds.to_tf_dataset(batch_size=64)</code></pre>
+        </section>
+
+        <!-- DATASET VERSIONING -->
+        <section class="slide" id="ds-versioning">
+            <h2 class="anim-fade d1">Versioning Datasets</h2>
+            <p class="anim-fade d2">Each dataset can have unlimited versions. New versions are created when source data is updated (e.g., monthly data refresh), feature definitions change, or you want to test model sensitivity to different data cuts.</p>
+            <pre class="anim-fade d3"><code><span class="comment"># List existing dataset versions</span>
+session.sql(<span class="string">"SHOW DATASETS IN SCHEMA ML.TRAINING"</span>).collect()
+
+<span class="comment"># Create a new version with updated data</span>
+ds_v2 = Dataset.create(
+    session=session,
+    name=<span class="string">"churn_training"</span>,
+    version=<span class="string">"v2"</span>,
+    input_dataframe=updated_training_df
+)
+
+<span class="comment"># Load a specific version for reproducibility</span>
+ds = Dataset.load(session, <span class="string">"churn_training"</span>, version=<span class="string">"v1"</span>)
+
+<span class="comment"># Access via snow:// URL for cross-system referencing</span>
+<span class="comment"># snow://dataset/churn_training/versions/v1/</span></code></pre>
+            <div class="highlight-box anim-fade d4">
+                <h4>Immutability Guarantee</h4>
+                <p>Once created, a dataset version cannot be modified or deleted (unless explicitly dropped). This ensures that model training results tied to a specific dataset version are always reproducible, even across teams and environments.</p>
+            </div>
+        </section>
+
+        <!-- EXPERIMENTS WHY -->
+        <section class="slide" id="exp-why">
+            <h2 class="anim-fade d1">Why Experiment Tracking?</h2>
+            <p class="anim-fade d2">Data scientists typically run dozens or hundreds of training experiments before finding the best model. Without systematic tracking, teams lose track of which hyperparameters, data versions, and code produced which results. Snowflake's experiment tracking captures everything automatically so the best run can be confidently promoted to production.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>&#128202; Compare Runs</h4>
+                    <p>Track metrics (accuracy, F1, loss), parameters (learning rate, depth), and artifacts across training runs. Identify the best model quantitatively.</p>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>&#128221; Automatic Logging</h4>
+                    <p>Autolog support for XGBoost, LightGBM, and sklearn with zero-code instrumentation. Just enable autolog and all metrics/params are captured.</p>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>&#128640; Promote to Registry</h4>
+                    <p>Seamlessly promote the best experiment run to the Model Registry for deployment. One call bridges development and production.</p>
+                </div>
+            </div>
+            <div class="mermaid anim-fade d6">
+                graph LR
+                    A[Experiment] --> B[Run 1: lr=0.01, acc=0.89]
+                    A --> C[Run 2: lr=0.1, acc=0.92]
+                    A --> D[Run 3: lr=0.05, acc=0.94]
+                    D --> E[Promote to Registry]
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#6B7280
+                    style C fill:#1E293B,stroke:#6B7280
+                    style D fill:#1E293B,stroke:#10B981
+                    style E fill:#1E293B,stroke:#7C3AED
+            </div>
+        </section>
+
+        <!-- LOGGING METRICS -->
+        <section class="slide" id="exp-logging">
+            <h2 class="anim-fade d1">Logging Metrics</h2>
+            <p class="anim-fade d2">Every experiment run captures parameters (inputs), metrics (outputs), and optionally the model artifact itself. You can log scalar values, dictionaries, or even confusion matrices. The tracking data is stored in Snowflake and visible in the Snowsight UI.</p>
+            <pre class="anim-fade d3"><code><span class="keyword">from</span> snowflake.ml.experiment <span class="keyword">import</span> Experiment
+
+<span class="comment"># Create or get an experiment</span>
+exp = Experiment(session=session, name=<span class="string">"churn_model_experiment"</span>)
+
+<span class="comment"># Start a run and log metrics</span>
+<span class="keyword">with</span> exp.start_run(run_name=<span class="string">"xgboost_v1"</span>) <span class="keyword">as</span> run:
+    <span class="comment"># Log hyperparameters</span>
+    run.log_param(<span class="string">"learning_rate"</span>, 0.1)
+    run.log_param(<span class="string">"max_depth"</span>, 6)
+    run.log_param(<span class="string">"n_estimators"</span>, 500)
+
+    <span class="comment"># Train</span>
+    model.fit(X_train, y_train)
+    preds = model.predict(X_test)
+
+    <span class="comment"># Log evaluation metrics</span>
+    run.log_metric(<span class="string">"accuracy"</span>, accuracy_score(y_test, preds))
+    run.log_metric(<span class="string">"f1_score"</span>, f1_score(y_test, preds))
+    run.log_metric(<span class="string">"auc_roc"</span>, roc_auc_score(y_test, preds))
+
+    <span class="comment"># Save the model artifact with the run</span>
+    run.log_model(model)</code></pre>
+            <div class="highlight-box anim-fade d4">
+                <h4>Autolog (Zero-Code Instrumentation)</h4>
+                <pre><code><span class="keyword">from</span> snowflake.ml.experiment <span class="keyword">import</span> autolog
+autolog.enable()  <span class="comment"># Automatically captures all XGBoost/LightGBM/sklearn metrics,</span>
+                  <span class="comment"># parameters, and training callbacks without any code changes</span></code></pre>
+            </div>
+        </section>
+
+        <!-- PROMOTE EXPERIMENT -->
+        <section class="slide" id="exp-promote">
+            <h2 class="anim-fade d1">Promoting an Experiment to the Registry</h2>
+            <p class="anim-fade d2">Once you've identified the best experiment run, promoting it to the Model Registry makes it available for production inference. The promotion process captures the model, its metrics, and its metadata as a versioned, governed object.</p>
+            <pre class="anim-fade d3"><code><span class="keyword">from</span> snowflake.ml.registry <span class="keyword">import</span> Registry
+<span class="keyword">from</span> snowflake.ml.model <span class="keyword">import</span> task
+
+reg = Registry(session=session, database_name=<span class="string">"ML"</span>, schema_name=<span class="string">"REGISTRY"</span>)
+
+<span class="comment"># Get the best run from experiment</span>
+best_run = exp.get_run(<span class="string">"xgboost_v1"</span>)
+
+<span class="comment"># Log to the Model Registry for production use</span>
+mv = reg.log_model(
+    model=best_run.get_model(),
+    model_name=<span class="string">"churn_predictor"</span>,
+    version_name=<span class="string">"v1"</span>,
+    metrics=best_run.get_metrics(),
+    sample_input_data=X_test,
+    task=task.Task.TABULAR_BINARY_CLASSIFICATION,
+    comment=<span class="string">"Promoted from experiment: best F1=0.94"</span>
+)</code></pre>
+            <div class="context-box anim-fade d4">
+                <h4>What Happens at Promotion</h4>
+                <p>The model is serialized, dependencies are captured, method signatures are inferred from sample_input_data, and the model becomes callable via SQL, Python, or REST API.</p>
+            </div>
+        </section>
+
+        <!-- FRAMEWORKS -->
+        <section class="slide" id="train-frameworks">
+            <h2 class="anim-fade d1">Supported Frameworks</h2>
+            <p class="anim-fade d2">The Snowflake Model Registry has built-in type support for all major ML frameworks. Built-in support means the registry knows how to serialize, load, and invoke these models without custom code. You can also register any custom model via the CustomModel base class.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d2">
+                    <h4>scikit-learn</h4>
+                    <p>Classification, regression, clustering, preprocessing pipelines</p>
+                    <span class="badge badge-green">Built-in</span>
+                </div>
+                <div class="card anim-fade d3">
+                    <h4>XGBoost</h4>
+                    <p>Gradient boosted trees with distributed training support</p>
+                    <span class="badge badge-green">Built-in</span>
+                </div>
+                <div class="card anim-fade d3">
+                    <h4>LightGBM</h4>
+                    <p>Fast gradient boosting with distributed estimators</p>
+                    <span class="badge badge-green">Built-in</span>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>PyTorch</h4>
+                    <p>Deep learning with PyTorchDistributor for multi-GPU</p>
+                    <span class="badge badge-green">Built-in</span>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>TensorFlow / Keras</h4>
+                    <p>Deep learning models and Keras Sequential/Functional</p>
+                    <span class="badge badge-green">Built-in</span>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>Hugging Face</h4>
+                    <p>Transformers, sentence-transformers, pipelines</p>
+                    <span class="badge badge-green">Built-in</span>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>CatBoost / Prophet</h4>
+                    <p>Gradient boosting with categoricals, time-series forecasting</p>
+                    <span class="badge badge-green">Built-in</span>
+                </div>
+                <div class="card anim-fade d6">
+                    <h4>MLFlow / Custom</h4>
+                    <p>Import pyfunc models or define custom model classes</p>
+                    <span class="badge badge-blue">Compatible</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- CPU & GPU -->
+        <section class="slide" id="train-compute">
+            <h2 class="anim-fade d1">CPU & GPU Training</h2>
+            <p class="anim-fade d2">Snowflake ML leverages Compute Pools (Snowpark Container Services) for both CPU and GPU training workloads. Compute pools provide dedicated resources that scale independently of your virtual warehouses, enabling long-running training jobs without impacting query performance.</p>
+            <table class="comparison-table anim-fade d3">
+                <thead>
+                    <tr><th>Instance Family</th><th>Type</th><th>Use Case</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>CPU_X64_XS / S</td><td>CPU</td><td>Small sklearn models, preprocessing</td></tr>
+                    <tr><td>CPU_X64_M / L</td><td>CPU</td><td>XGBoost, LightGBM, larger data</td></tr>
+                    <tr><td>HIGHMEM_X64_S / M / L</td><td>High-Mem CPU</td><td>Large datasets in-memory, pandas ops</td></tr>
+                    <tr><td>GPU_NV_S</td><td>1x GPU</td><td>Single-GPU PyTorch / TensorFlow</td></tr>
+                    <tr><td>GPU_NV_M</td><td>4x GPU</td><td>Multi-GPU training, medium models</td></tr>
+                    <tr><td>GPU_NV_L</td><td>8x GPU</td><td>Large-scale deep learning, LLM fine-tuning</td></tr>
+                </tbody>
+            </table>
+            <pre class="anim-fade d4"><code><span class="comment">-- Create a GPU compute pool for training</span>
+CREATE COMPUTE POOL gpu_training_pool
+  MIN_NODES = 1
+  MAX_NODES = 4
+  INSTANCE_FAMILY = GPU_NV_M;
+
+<span class="comment">-- Pool auto-suspends when idle, auto-resumes on job submit</span></code></pre>
+            <div class="warning-box anim-fade d5">
+                <h4>Cost Tip</h4>
+                <p>Compute pools bill based on active node-hours. Set MAX_NODES to control costs, and use AUTO_SUSPEND to avoid paying for idle resources between jobs.</p>
+            </div>
+        </section>
+
+        <!-- DISTRIBUTED TRAINING -->
+        <section class="slide" id="train-distributed">
+            <h2 class="anim-fade d1">Distributed Training</h2>
+            <p class="anim-fade d2">For large datasets or complex models, single-node training is too slow. Snowflake provides purpose-built distributed APIs that handle data partitioning, worker communication, and fault tolerance automatically. Training can be 3-7x faster than equivalent open-source implementations.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>XGBEstimator</h4>
+                    <p>Distributed XGBoost across compute nodes. Automatic data partitioning and AllReduce communication. Snowpark DataFrame in, trained model out.</p>
+                    <span class="badge badge-purple">Distributed</span>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>LightGBMEstimator</h4>
+                    <p>Multi-node LightGBM with built-in data sharding. Optimized for high-cardinality features and large datasets.</p>
+                    <span class="badge badge-purple">Distributed</span>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>PyTorchDistributor</h4>
+                    <p>Multi-node, multi-GPU PyTorch with DistributedDataParallel. Launch any training script on compute pools with automatic NCCL setup.</p>
+                    <span class="badge badge-purple">Distributed</span>
+                </div>
+            </div>
+            <pre class="anim-fade d6"><code><span class="keyword">from</span> snowflake.ml.modeling.distributors <span class="keyword">import</span> XGBEstimator
+
+<span class="comment"># Distributed training: data is automatically sharded across workers</span>
+estimator = XGBEstimator(
+    n_estimators=500,
+    max_depth=8,
+    learning_rate=0.1,
+    compute_pool=<span class="string">"gpu_training_pool"</span>,
+    num_workers=4  <span class="comment"># 4 parallel training workers</span>
+)
+model = estimator.fit(train_df)  <span class="comment"># Snowpark DataFrame input</span></code></pre>
+        </section>
+
+        <!-- MANY MODELS -->
+        <section class="slide" id="train-mmt">
+            <h2 class="anim-fade d1">Many Model Training (MMT)</h2>
+            <p class="anim-fade d2">Some use cases require training separate models for different segments &mdash; one model per store, region, product line, or customer cohort. MMT automates this pattern: partition data by a key column, train an independent model for each partition, and store all models in a single registry object with automatic serialization and retrieval.</p>
+            <div class="mermaid anim-fade d3">
+                graph TD
+                    A[Training Data] --> B[Partition by REGION]
+                    B --> C[Model: US_EAST]
+                    B --> D[Model: US_WEST]
+                    B --> E[Model: EU]
+                    B --> F[Model: APAC]
+                    C --> G[Registry: Single Object]
+                    D --> G
+                    E --> G
+                    F --> G
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#F59E0B
+                    style C fill:#1E293B,stroke:#10B981
+                    style D fill:#1E293B,stroke:#10B981
+                    style E fill:#1E293B,stroke:#10B981
+                    style F fill:#1E293B,stroke:#10B981
+                    style G fill:#1E293B,stroke:#7C3AED
+            </div>
+            <pre class="anim-fade d4"><code><span class="keyword">from</span> snowflake.ml.modeling.distributors <span class="keyword">import</span> ManyModelTraining
+
+<span class="comment"># Train one model per partition in parallel</span>
+mmt = ManyModelTraining(
+    estimator=XGBClassifier(),
+    partition_by=<span class="string">"REGION"</span>,
+    compute_pool=<span class="string">"training_pool"</span>
+)
+mmt.fit(partitioned_df)
+
+<span class="comment"># At inference, the correct sub-model is automatically</span>
+<span class="comment"># selected based on the partition key value</span></code></pre>
+        </section>
+
+        <!-- HPO -->
+        <section class="slide" id="train-hpo">
+            <h2 class="anim-fade d1">Hyperparameter Tuning</h2>
+            <p class="anim-fade d2">The Tuner API provides distributed hyperparameter optimization powered by Ray Tune on SPCS compute pools. It supports multiple search strategies and runs trials in parallel across available compute resources, dramatically reducing time-to-best-model.</p>
+            <pre class="anim-fade d3"><code><span class="keyword">from</span> snowflake.ml.modeling.tune <span class="keyword">import</span> Tuner, TunerConfig
+<span class="keyword">from</span> snowflake.ml.modeling.tune.search <span class="keyword">import</span> RandomSearch
+
+config = TunerConfig(
+    search_alg=RandomSearch(),
+    num_trials=50,  <span class="comment"># Run 50 different configurations</span>
+    compute_pool=<span class="string">"gpu_training_pool"</span>
+)
+
+search_space = {
+    <span class="string">"learning_rate"</span>: [0.01, 0.05, 0.1, 0.2],
+    <span class="string">"max_depth"</span>: [4, 6, 8, 10],
+    <span class="string">"n_estimators"</span>: [100, 200, 500]
+}
+
+tuner = Tuner(estimator=XGBClassifier(), config=config)
+best_model = tuner.fit(train_df, search_space=search_space)
+<span class="comment"># Returns the model with best validation metric</span></code></pre>
+            <div class="pill-list anim-fade d4">
+                <span class="pill">RandomSearch</span>
+                <span class="pill">GridSearch</span>
+                <span class="pill">BayesOpt (Bayesian Optimization)</span>
+            </div>
+        </section>
+
+        <!-- MODEL REGISTRY -->
+        <section class="slide" id="registry">
+            <h2 class="anim-fade d1">Model Registry</h2>
+            <p class="anim-fade d2">The Snowflake Model Registry stores machine learning models as first-class schema-level objects. After logging a model, it becomes a versioned, governed entity that can be invoked for inference via SQL, Python, or REST APIs. The registry handles serialization, dependency management, and access control automatically.</p>
+            <div class="mermaid anim-fade d3">
+                graph TD
+                    A[Trained Model] -->|log_model| B[Model Registry]
+                    B --> C[Version Management]
+                    B --> D[Metadata & Metrics]
+                    B --> E[RBAC & Governance]
+                    B --> F[Inference Endpoints]
+                    F --> G[Warehouse SQL]
+                    F --> H[SPCS Service]
+                    F --> I[REST API]
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#7C3AED
+                    style C fill:#1E293B,stroke:#10B981
+                    style D fill:#1E293B,stroke:#10B981
+                    style E fill:#1E293B,stroke:#10B981
+                    style F fill:#1E293B,stroke:#F59E0B
+                    style G fill:#1E293B,stroke:#F59E0B
+                    style H fill:#1E293B,stroke:#F59E0B
+                    style I fill:#1E293B,stroke:#F59E0B
+            </div>
+            <div class="context-box anim-fade d4">
+                <h4>Key Capabilities</h4>
+                <p>Up to 1000 versions per model. Built-in Shapley value explanations. Model sharing and replication across accounts. Snowsight UI for browsing, comparing, and managing models. SQL and Python APIs for all operations.</p>
+            </div>
+        </section>
+
+        <!-- DEPLOY MODELS -->
+        <section class="slide" id="registry-deploy">
+            <h2 class="anim-fade d1">Deploy Models</h2>
+            <p class="anim-fade d2">Deploying a model to the registry is called "logging." The <code>log_model()</code> call serializes your Python model object, captures its dependencies, infers method signatures, and creates a Snowflake MODEL object. You choose the target platform based on your inference needs.</p>
+            <pre class="anim-fade d3"><code><span class="keyword">from</span> snowflake.ml.registry <span class="keyword">import</span> Registry
+<span class="keyword">from</span> snowflake.ml.model <span class="keyword">import</span> task
+
+reg = Registry(session=session, database_name=<span class="string">"ML"</span>, schema_name=<span class="string">"REGISTRY"</span>)
+
+mv = reg.log_model(
+    model=trained_clf,
+    model_name=<span class="string">"fraud_detector"</span>,
+    version_name=<span class="string">"v1"</span>,
+    conda_dependencies=[<span class="string">"scikit-learn"</span>, <span class="string">"xgboost"</span>],
+    sample_input_data=train_features,  <span class="comment"># Infers input schema</span>
+    task=task.Task.TABULAR_BINARY_CLASSIFICATION,
+    metrics={<span class="string">"accuracy"</span>: 0.96, <span class="string">"f1"</span>: 0.93},
+    comment=<span class="string">"Production fraud detection model"</span>
+)</code></pre>
+            <table class="comparison-table anim-fade d4">
+                <thead><tr><th>Target Platform</th><th>Use Case</th><th>Max Model Size</th></tr></thead>
+                <tbody>
+                    <tr><td><code>WAREHOUSE</code></td><td>SQL-based batch inference, Dynamic Tables, dbt</td><td>15 GB</td></tr>
+                    <tr><td><code>SNOWPARK_CONTAINER_SERVICES</code></td><td>GPU inference, REST endpoints, large/custom models</td><td>Unlimited</td></tr>
+                    <tr><td><code>BOTH</code> (default)</td><td>Maximum flexibility, deploy anywhere later</td><td>15 GB (warehouse limit)</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- VERSIONING MODELS -->
+        <section class="slide" id="registry-versioning">
+            <h2 class="anim-fade d1">Versioning Models</h2>
+            <p class="anim-fade d2">Models support unlimited versions, system aliases (DEFAULT, FIRST, LAST), custom aliases, and per-version metrics comparison. The default version is what gets called when you reference the model without specifying a version &mdash; enabling seamless model updates without changing downstream SQL.</p>
+            <pre class="anim-fade d3"><code><span class="comment"># Log a new version of an existing model</span>
+mv_v2 = reg.log_model(
+    model=improved_model,
+    model_name=<span class="string">"fraud_detector"</span>,
+    version_name=<span class="string">"v2"</span>,
+    metrics={<span class="string">"accuracy"</span>: 0.97, <span class="string">"f1"</span>: 0.95}
+)
+
+<span class="comment"># Set default version - downstream SQL automatically uses v2</span>
+model = reg.get_model(<span class="string">"fraud_detector"</span>)
+model.default = <span class="string">"v2"</span>
+
+<span class="comment"># System aliases: DEFAULT, FIRST, LAST</span>
+latest = model.version(<span class="string">"LAST"</span>)
+
+<span class="comment"># Compare metrics across all versions</span>
+<span class="keyword">for</span> v <span class="keyword">in</span> model.versions():
+    <span class="func">print</span>(f<span class="string">"{v.name}: {v.show_metrics()}"</span>)</code></pre>
+        </section>
+
+        <!-- BATCH INFERENCE -->
+        <section class="slide" id="inference-batch">
+            <h2 class="anim-fade d1">Batch Inference</h2>
+            <p class="anim-fade d2">Run predictions on registered models using two approaches. <strong>Native SQL Batch</strong> (<code>mv.run()</code>) executes in virtual warehouses and integrates with SQL pipelines, Dynamic Tables, and dbt. <strong>Job-Based Batch</strong> (<code>mv.run_batch()</code>) runs on SPCS compute pools for GPU workloads, large-scale inference, or unstructured data processing.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>Native SQL Batch <code>mv.run()</code></h4>
+                    <p>Warehouse-based inference. Best for structured data, integrates with SQL pipelines and Dynamic Tables. Millisecond per-row latency at scale.</p>
+                    <span class="badge badge-blue">Warehouse</span>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>Job-Based Batch <code>mv.run_batch()</code></h4>
+                    <p>SPCS compute pool execution. Best for GPU models, unstructured data (images, text), or datasets too large for warehouse memory.</p>
+                    <span class="badge badge-purple">SPCS</span>
+                </div>
+            </div>
+            <pre class="anim-fade d5"><code><span class="comment"># Python: batch inference via warehouse</span>
+predictions = mv.run(test_features, function_name=<span class="string">"predict"</span>)
+predictions.show()</code></pre>
+            <pre class="anim-fade d6"><code><span class="comment">-- SQL: invoke model directly in any query</span>
+<span class="keyword">SELECT</span> fraud_detector!predict(*) <span class="keyword">AS</span> prediction
+<span class="keyword">FROM</span> ML.DATA.TRANSACTIONS
+<span class="keyword">WHERE</span> transaction_date = CURRENT_DATE;</code></pre>
+        </section>
+
+        <!-- ONLINE INFERENCE -->
+        <section class="slide" id="inference-online">
+            <h2 class="anim-fade d1">Online Inference (SPCS)</h2>
+            <p class="anim-fade d2">Deploy models as always-on services in Snowpark Container Services for real-time predictions. Inference services provide dedicated compute, auto-scaling, and stable REST endpoints. They're ideal for latency-sensitive applications, GPU models, and models that need to serve external traffic.</p>
+            <pre class="anim-fade d3"><code><span class="comment"># Deploy as an inference service on SPCS</span>
+mv.create_service(
+    service_name=<span class="string">"fraud_detection_service"</span>,
+    service_compute_pool=<span class="string">"gpu_inference_pool"</span>,
+    num_workers=3,  <span class="comment"># Concurrent request handlers</span>
+    num_gpus=1      <span class="comment"># GPU per worker for accelerated inference</span>
+)
+
+<span class="comment"># Check service status</span>
+<span class="keyword">DESCRIBE SERVICE</span> ML.REGISTRY.FRAUD_DETECTION_SERVICE;</code></pre>
+            <div class="highlight-box anim-fade d4">
+                <h4>Auto-scaling & High Availability</h4>
+                <p>Inference services auto-scale based on request volume within the compute pool's min/max node bounds. Multiple replicas ensure high availability. Auto-capture logs all request/response pairs for monitoring and retraining.</p>
+            </div>
+        </section>
+
+        <!-- REST API -->
+        <section class="slide" id="inference-rest">
+            <h2 class="anim-fade d1">REST API Inference</h2>
+            <p class="anim-fade d2">Deployed inference services expose REST endpoints that external applications (web apps, mobile backends, microservices) can call directly. Authentication uses Snowflake OAuth or key-pair tokens. The REST API supports both single-row and batch predictions.</p>
+            <pre class="anim-fade d3"><code><span class="comment"># REST endpoint call (external client)</span>
+curl -X POST https://&lt;account&gt;.snowflakecomputing.com/api/v2/inference \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "service": "ML.REGISTRY.FRAUD_DETECTION_SERVICE",
+    "data": [
+        {"AMOUNT": 5000, "MERCHANT": "unknown", "HOUR": 3}
+    ]
+  }'</code></pre>
+            <div class="flow-steps anim-fade d4">
+                <div class="flow-step">Client App</div>
+                <span class="flow-arrow">&rarr;</span>
+                <div class="flow-step">REST API</div>
+                <span class="flow-arrow">&rarr;</span>
+                <div class="flow-step">SPCS Service</div>
+                <span class="flow-arrow">&rarr;</span>
+                <div class="flow-step">Feature Retrieval</div>
+                <span class="flow-arrow">&rarr;</span>
+                <div class="flow-step">Prediction</div>
+            </div>
+            <div class="context-box anim-fade d5">
+                <h4>Feature Auto-Retrieval</h4>
+                <p>When ML Lineage is available, inference services can automatically retrieve required features from the Feature Store. The caller only needs to provide entity keys &mdash; not all input features.</p>
+            </div>
+        </section>
+
+        <!-- SQL INFERENCE -->
+        <section class="slide" id="inference-sql">
+            <h2 class="anim-fade d1">SQL API Inference</h2>
+            <p class="anim-fade d2">The most powerful integration: invoke model methods directly in SQL queries. This means any SQL user, BI tool, Dynamic Table, or dbt model can run predictions without writing Python. The model appears as a callable object using the <code>model_name!method_name()</code> syntax.</p>
+            <pre class="anim-fade d3"><code><span class="comment">-- Call model predict method inline in any SQL query</span>
+<span class="keyword">SELECT</span>
+    t.CUSTOMER_ID,
+    t.AMOUNT,
+    fraud_detector!predict(
+        t.AMOUNT, t.MERCHANT_CATEGORY, t.HOUR_OF_DAY
+    ) <span class="keyword">AS</span> FRAUD_PROBABILITY
+<span class="keyword">FROM</span> TRANSACTIONS t
+<span class="keyword">WHERE</span> t.TRANSACTION_DATE = CURRENT_DATE;
+
+<span class="comment">-- Use in a Dynamic Table for continuous, streaming predictions</span>
+<span class="keyword">CREATE OR REPLACE DYNAMIC TABLE</span> fraud_scores
+    TARGET_LAG = '1 hour'
+    WAREHOUSE = ML_WH
+<span class="keyword">AS SELECT</span>
+    CUSTOMER_ID,
+    fraud_detector!predict(*) <span class="keyword">AS</span> score
+<span class="keyword">FROM</span> LIVE_TRANSACTIONS;</code></pre>
+            <div class="warning-box anim-fade d4">
+                <h4>Dynamic Table Note</h4>
+                <p>Models with VOLATILE volatility require full table refresh in Dynamic Tables. Use IMMUTABLE (default for built-in models) for incremental refresh support.</p>
+            </div>
+        </section>
+
+        <!-- ML JOBS -->
+        <section class="slide" id="mljobs">
+            <h2 class="anim-fade d1">ML Jobs</h2>
+            <p class="anim-fade d2">ML Jobs let you run Python ML workloads on Snowflake Compute Pools from <strong>any</strong> development environment &mdash; VS Code, Jupyter, PyCharm, or CI/CD pipelines. Your code executes inside the Snowflake Container Runtime with GPU access, pre-installed ML packages, and automatic Snowpark session injection. No worksheets or notebooks required.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>@remote Decorator</h4>
+                    <p>Wrap any Python function. It gets serialized, uploaded to a stage, and executed on your compute pool. Returns an MLJob handle for monitoring.</p>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>submit_file()</h4>
+                    <p>Submit standalone Python scripts with CLI arguments, custom pip dependencies, and environment variables. Great for existing training scripts.</p>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>submit_directory()</h4>
+                    <p>Submit multi-file projects with entrypoints, module imports, and directory structure. Ideal for production ML codebases.</p>
+                </div>
+            </div>
+            <pre class="anim-fade d6"><code><span class="keyword">from</span> snowflake.ml.jobs <span class="keyword">import</span> remote
+
+@remote(<span class="string">"MY_COMPUTE_POOL"</span>, stage_name=<span class="string">"payload_stage"</span>)
+<span class="keyword">def</span> <span class="func">train_model</span>(data_table: str):
+    <span class="comment"># This entire function runs on Snowflake compute</span>
+    <span class="comment"># Session is auto-injected, GPU is available</span>
+    model = XGBClassifier()
+    model.fit(load_data(data_table))
+    <span class="keyword">return</span> model
+
+job = train_model(<span class="string">"my_training_data"</span>)  <span class="comment"># Non-blocking submit</span>
+<span class="func">print</span>(job.status)   <span class="comment"># PENDING, RUNNING, DONE, FAILED</span>
+model = job.result() <span class="comment"># Blocks until done, returns trained model</span></code></pre>
+        </section>
+
+        <!-- DISTRIBUTED ML JOBS -->
+        <section class="slide" id="mljobs-distributed">
+            <h2 class="anim-fade d1">Distributed ML Jobs</h2>
+            <p class="anim-fade d2">ML Jobs support multi-node execution via Ray. When you submit a job to a compute pool with multiple nodes, Snowflake automatically sets up a Ray cluster, distributes your workload, and provides a Ray Dashboard for real-time monitoring of tasks, memory, and GPU utilization.</p>
+            <pre class="anim-fade d3"><code><span class="keyword">from</span> snowflake.ml.jobs <span class="keyword">import</span> submit_file
+
+job = submit_file(
+    <span class="string">"distributed_train.py"</span>,
+    <span class="string">"MULTI_NODE_POOL"</span>,  <span class="comment"># Pool with MAX_NODES > 1</span>
+    stage_name=<span class="string">"payload_stage"</span>,
+    args=[<span class="string">"--epochs"</span>, <span class="string">"100"</span>, <span class="string">"--batch-size"</span>, <span class="string">"256"</span>],
+    pip_requirements=[<span class="string">"transformers"</span>, <span class="string">"accelerate"</span>],
+    external_access_integrations=[<span class="string">"PYPI_EAI"</span>]
+)
+
+<span class="comment"># Real-time monitoring via Ray Dashboard</span>
+dashboard_url = job.get_ray_dashboard_url()
+<span class="func">print</span>(f<span class="string">"Dashboard: {dashboard_url}"</span>)
+
+<span class="comment"># Stream logs as they arrive</span>
+<span class="func">print</span>(job.get_logs())</code></pre>
+            <div class="context-box anim-fade d4">
+                <h4>Ray Dashboard</h4>
+                <p>Available in snowflake-ml-python 1.30+. Provides live visibility into cluster utilization, task scheduling, memory pressure, and worker health. Accessible via browser while the job is running.</p>
+            </div>
+        </section>
+
+        <!-- PIPELINES -->
+        <section class="slide" id="mljobs-pipelines">
+            <h2 class="anim-fade d1">Create ML Pipelines</h2>
+            <p class="anim-fade d2">Orchestrate multi-step ML workflows with Snowflake Task Graphs (DAGs) using the Python DAG API. Each step can be an ML Job (on compute pools) or a warehouse task (for SQL operations). Tasks support Cron/timedelta scheduling, inter-task data passing, and conditional execution.</p>
+            <div class="mermaid anim-fade d3">
+                graph LR
+                    A[Extract Features] --> B[Train Model]
+                    B --> C[Evaluate]
+                    C --> D{Threshold Met?}
+                    D -->|Yes| E[Deploy]
+                    D -->|No| F[Alert & Log]
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#7C3AED
+                    style C fill:#1E293B,stroke:#F59E0B
+                    style D fill:#1E293B,stroke:#F59E0B
+                    style E fill:#1E293B,stroke:#10B981
+                    style F fill:#1E293B,stroke:#EF4444
+            </div>
+            <pre class="anim-fade d4"><code><span class="keyword">from</span> snowflake.ml.jobs <span class="keyword">import</span> remote
+<span class="keyword">from</span> snowflake.core.task.dagv1 <span class="keyword">import</span> DAG, DAGTask
+<span class="keyword">from</span> datetime <span class="keyword">import</span> timedelta
+
+@remote(<span class="string">"COMPUTE_POOL"</span>, stage_name=<span class="string">"payload_stage"</span>)
+<span class="keyword">def</span> <span class="func">train_model</span>(data_table):
+    ...
+
+<span class="comment"># Create a daily ML pipeline</span>
+dag = DAG(<span class="string">"ml_pipeline"</span>, schedule=timedelta(days=1))
+train_task = DAGTask(<span class="string">"TRAIN"</span>, definition=train_model)
+eval_task = DAGTask(<span class="string">"EVALUATE"</span>, definition=evaluate_model)
+deploy_task = DAGTask(<span class="string">"DEPLOY"</span>, definition=deploy_model)
+
+train_task >> eval_task >> deploy_task  <span class="comment"># Define dependencies</span></code></pre>
+        </section>
+
+        <!-- MIGRATE FROM NOTEBOOKS -->
+        <section class="slide" id="mljobs-migrate">
+            <h2 class="anim-fade d1">Migrate from Notebooks to ML Jobs</h2>
+            <p class="anim-fade d2">Notebooks are great for exploration but not for production. ML Jobs bridge this gap by letting you extract notebook logic into testable, version-controlled Python scripts that run on dedicated compute. The migration path is straightforward:</p>
+            <div class="flow-steps anim-fade d3">
+                <div class="flow-step">1. Extract logic into .py files</div>
+                <span class="flow-arrow">&rarr;</span>
+                <div class="flow-step">2. Add @remote decorator</div>
+                <span class="flow-arrow">&rarr;</span>
+                <div class="flow-step">3. Submit as ML Job</div>
+                <span class="flow-arrow">&rarr;</span>
+                <div class="flow-step">4. Orchestrate with DAG</div>
+            </div>
+            <div class="highlight-box anim-fade d4">
+                <h4>Key Benefits of Migration</h4>
+                <ul>
+                    <li><strong>Reproducibility:</strong> Version-controlled .py files (not stateful notebooks)</li>
+                    <li><strong>Scalability:</strong> Run on dedicated GPU/CPU compute pools with auto-scaling</li>
+                    <li><strong>Integration:</strong> Connect with CI/CD pipelines, Airflow, and Task Graphs</li>
+                    <li><strong>Simplicity:</strong> Session automatically available via <code>Session.builder.getOrCreate()</code> &mdash; no auth code needed</li>
+                    <li><strong>Observability:</strong> Ray Dashboard, structured logging, and job status tracking</li>
+                </ul>
+            </div>
+            <div class="warning-box anim-fade d5">
+                <h4>Common Pitfall</h4>
+                <p>Don't wrap entire notebooks into one function. Split into logical steps (data prep, training, evaluation) so each can be independently tested, retried, and monitored.</p>
+            </div>
+        </section>
+
+        <!-- ML GATEWAY -->
+        <section class="slide" id="mlgateway">
+            <h2 class="anim-fade d1">Snowflake Gateway</h2>
+            <h3 class="anim-fade d2">Stable Endpoints, A/B Testing & High Availability</h3>
+            <p class="anim-fade d2">The Snowflake Gateway solves a critical production challenge: SPCS inference services are tightly coupled to their hostname, meaning service recreation breaks client integrations. The Gateway provides a <strong>permanent, stable URL</strong> that persists for the lifetime of the gateway object, decoupling clients from underlying service changes. This enables zero-downtime model upgrades, traffic splitting for A/B tests, and automatic failover for high availability.</p>
+
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>&#128279; Stable Endpoint</h4>
+                    <p>One permanent URL that never changes, regardless of how many times you recreate, upgrade, or replace the underlying inference service. Clients never need to update their integration.</p>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>&#128256; A/B Testing & Canary Deploys</h4>
+                    <p>Split traffic across multiple model versions by percentage. Route 90% to production (V1) and 10% to candidate (V2). Gradually shift as confidence builds. Validate new models with real traffic before full rollout.</p>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>&#9889; Automatic Failover</h4>
+                    <p>Gateway auto-redirects traffic away from unhealthy endpoints. If a service fails its readiness probe, is suspended, or is dropped, traffic flows to remaining healthy targets with proportional redistribution.</p>
+                </div>
+                <div class="card anim-fade d6">
+                    <h4>&#128640; Blue-Green Deployments</h4>
+                    <p>Deploy V2 alongside V1, validate with small traffic %, then flip 100% to V2 in one ALTER command. Rollback instantly by shifting traffic back. Zero downtime, zero client changes.</p>
+                </div>
+            </div>
+
+            <div class="mermaid anim-fade d6">
+                graph LR
+                    A[Client App] --> B[Gateway: Stable URL]
+                    B -->|90%| C[Model V1 Service]
+                    B -->|10%| D[Model V2 Service]
+                    C --> E[Predictions]
+                    D --> E
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#7C3AED
+                    style C fill:#1E293B,stroke:#10B981
+                    style D fill:#1E293B,stroke:#F59E0B
+                    style E fill:#1E293B,stroke:#10B981
+            </div>
+
+            <div class="two-col anim-fade d7">
+                <div class="highlight-box" style="margin:0;">
+                    <h4>Traffic Splitting Rules</h4>
+                    <ul>
+                        <li>Weights must sum to exactly 100</li>
+                        <li>Up to 5 endpoints per gateway</li>
+                        <li>Changes reflect within ~1 minute</li>
+                        <li>Endpoints at 0% never receive failover traffic</li>
+                        <li>Supports <code>dataframe_records</code> format for schema evolution</li>
+                    </ul>
+                </div>
+                <div class="context-box" style="margin:0;">
+                    <h4>Failover Triggers</h4>
+                    <ul>
+                        <li>Service suspended (auto_resume=false)</li>
+                        <li>Compute pool suspended</li>
+                        <li>Readiness probe failure</li>
+                        <li>Service dropped</li>
+                        <li>Owner loses USAGE privilege on target</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="warning-box anim-fade d8">
+                <h4>Schema Evolution Strategy</h4>
+                <p>When V2 requires different input features than V1: (1) Update clients to send the superset of all features needed by both versions &mdash; Snowflake ignores extra columns. (2) Gradually shift traffic. (3) Once at 100% V2, clean up obsolete V1 features from client payloads.</p>
+            </div>
+        </section>
+
+        <!-- MONITOR OVERVIEW -->
+        <section class="slide" id="monitor-overview">
+            <h2 class="anim-fade d1">Monitor & Observability</h2>
+            <p class="anim-fade d2">Model behavior degrades over time due to input drift, stale training assumptions, data pipeline issues, and changing user behavior. ML Observability allows you to track production model quality across multiple dimensions &mdash; performance, drift, and volume &mdash; with automatic refresh and alerting. Currently supports regression and binary classification models.</p>
+            <div class="mermaid anim-fade d3">
+                graph TD
+                    A[Inference Data] --> B[Model Monitor]
+                    B --> C[Performance Metrics]
+                    B --> D[Drift Detection]
+                    B --> E[Statistical Metrics]
+                    C --> F[Snowsight Dashboard]
+                    D --> F
+                    E --> F
+                    F --> G[Alerts & Notifications]
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#7C3AED
+                    style C fill:#1E293B,stroke:#10B981
+                    style D fill:#1E293B,stroke:#F59E0B
+                    style E fill:#1E293B,stroke:#F59E0B
+                    style F fill:#1E293B,stroke:#29B5E8
+                    style G fill:#1E293B,stroke:#EF4444
+            </div>
+            <div class="context-box anim-fade d4">
+                <h4>How It Works</h4>
+                <p>Create a model monitor object that points to your inference log table. The monitor automatically refreshes on schedule, computing metrics for each aggregation window (minimum 1 day). Results are viewable in Snowsight or queryable via SQL metric functions. Supports data segmentation by string categorical columns (e.g., by region, customer tier).</p>
+            </div>
+        </section>
+
+        <!-- LOGS & EVENTS -->
+        <section class="slide" id="monitor-logs">
+            <h2 class="anim-fade d1">Logs, Events & Metrics</h2>
+            <p class="anim-fade d2">Comprehensive observability requires capturing inference data, system telemetry, and model performance metrics. Snowflake provides integrated tools for all three, stored in standard Snowflake tables that can be queried, joined, and visualized.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>&#128220; Inference Logs (Auto-Capture)</h4>
+                    <p>INFERENCE_TABLE() auto-captures all request/response pairs from inference services. Build retraining datasets from production traffic. Debug unexpected predictions. Enable A/B testing.</p>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>&#128276; Event Table (Telemetry)</h4>
+                    <p>Centralized event table captures logs, traces, and spans from UDFs, stored procedures, and SPCS services. Standard observability primitives for ML workloads.</p>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>&#128202; Performance Metrics</h4>
+                    <p>Accuracy, F1, precision, recall, MAE, RMSE tracked over time with configurable aggregation windows. Compare against baseline. Set up alerts when metrics cross thresholds.</p>
+                </div>
+            </div>
+            <pre class="anim-fade d6"><code><span class="comment">-- Query performance metrics from model monitor over time</span>
+<span class="keyword">SELECT</span> *
+<span class="keyword">FROM TABLE</span>(MODEL_MONITOR_PERFORMANCE_METRIC(
+    <span class="string">'churn_monitor'</span>,
+    <span class="string">'ACCURACY'</span>,
+    <span class="string">'DAY'</span>,
+    <span class="string">'2026-01-01'</span>::TIMESTAMP_NTZ,
+    <span class="string">'2026-05-01'</span>::TIMESTAMP_NTZ
+));</code></pre>
+        </section>
+
+        <!-- DRIFT MONITORING -->
+        <section class="slide" id="monitor-drift">
+            <h2 class="anim-fade d1">Drift Monitoring</h2>
+            <p class="anim-fade d2">Drift detection identifies when the distribution of input features or predictions has shifted from the training baseline. This is often the earliest signal that model accuracy is degrading &mdash; before ground truth labels become available. Snowflake supports PSI (Population Stability Index), KL Divergence, and JS Divergence for drift measurement.</p>
+            <pre class="anim-fade d3"><code><span class="comment">-- Create a model monitor with baseline for drift detection</span>
+<span class="keyword">CREATE MODEL MONITOR</span> churn_monitor <span class="keyword">WITH</span>
+    MODEL = ML.REGISTRY.CHURN_PREDICTOR
+    VERSION = <span class="string">'v2'</span>
+    SOURCE = ML.DATA.INFERENCE_LOG
+    TIMESTAMP_COLUMN = INFERENCE_TS
+    PREDICTION_SCORE_COLUMNS = (CHURN_PROBABILITY)
+    ACTUAL_SCORE_COLUMNS = (ACTUAL_CHURN)
+    ID_COLUMNS = (CUSTOMER_ID)
+    AGGREGATION_WINDOW = <span class="string">'1 DAY'</span>
+    WAREHOUSE = ML_MONITOR_WH
+    BASELINE = ML.DATA.TRAINING_BASELINE
+    SEGMENT_COLUMNS = (CUSTOMER_TIER, REGION);
+
+<span class="comment">-- Query drift: which features are shifting?</span>
+<span class="keyword">SELECT</span> *
+<span class="keyword">FROM TABLE</span>(MODEL_MONITOR_DRIFT_METRIC(
+    <span class="string">'churn_monitor'</span>, <span class="string">'PSI'</span>, <span class="string">'INCOME'</span>,
+    <span class="string">'DAY'</span>, <span class="string">'2026-04-01'</span>::TIMESTAMP_NTZ, <span class="string">'2026-05-01'</span>::TIMESTAMP_NTZ
+));</code></pre>
+            <div class="highlight-box anim-fade d4">
+                <h4>Segmented Monitoring</h4>
+                <p>Monitor drift per segment (e.g., by customer tier or region). A global model might look healthy while a specific segment is drifting significantly. Supports up to 5 segment columns with &lt;25 unique values each.</p>
+            </div>
+        </section>
+
+        <!-- ML LINEAGE -->
+        <section class="slide" id="monitor-lineage">
+            <h2 class="anim-fade d1">ML Lineage</h2>
+            <p class="anim-fade d2">ML Lineage provides automatic end-to-end tracing of data flow across the ML lifecycle: from source tables through feature engineering, dataset creation, model training, and inference services. Lineage is captured automatically when you use Feature Store and Model Registry APIs &mdash; no manual instrumentation required.</p>
+            <div class="mermaid anim-fade d3">
+                graph LR
+                    A[Source Tables] --> B[Feature Views]
+                    B --> C[Datasets]
+                    C --> D[Models]
+                    D --> E[Services]
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#29B5E8
+                    style C fill:#1E293B,stroke:#7C3AED
+                    style D fill:#1E293B,stroke:#7C3AED
+                    style E fill:#1E293B,stroke:#10B981
+            </div>
+            <div class="highlight-box anim-fade d4">
+                <h4>Use Cases</h4>
+                <ul>
+                    <li><strong>Impact Analysis:</strong> "If I change this source table schema, which models break?"</li>
+                    <li><strong>Root Cause:</strong> "This model's accuracy dropped &mdash; what upstream data changed recently?"</li>
+                    <li><strong>Compliance & Audit:</strong> "Show the complete provenance of this model's training data for SOC2/GDPR."</li>
+                    <li><strong>Inference Simplification:</strong> Models auto-retrieve correct features via lineage at serving time.</li>
+                </ul>
+            </div>
+            <pre class="anim-fade d5"><code><span class="comment">-- Query lineage for a model: what data flows into it?</span>
+<span class="keyword">SELECT</span> *
+<span class="keyword">FROM TABLE</span>(SNOWFLAKE.ML.GET_LINEAGE(
+    <span class="string">'ML.REGISTRY.FRAUD_DETECTOR'</span>
+));
+
+<span class="comment">-- Results show: source tables, feature views, datasets</span>
+<span class="comment">-- that contributed to this model's training</span></code></pre>
+        </section>
+
+        <!-- AGENTIC WHY -->
+        <section class="slide" id="agentic-why">
+            <h2 class="anim-fade d1">Why Agents for ML?</h2>
+            <p class="anim-fade d2">Developing and moving models through the ML pipeline has traditionally been slow and manual, forcing data scientists into tedious troubleshooting cycles. Agentic ML through Cortex Code (GA) automates development of production-ready ML solutions from natural language prompts. Teams report 10x productivity gains by eliminating context-switching between documentation, APIs, and debugging.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>&#9889; 10x Productivity</h4>
+                    <p>Natural language prompts generate complete, executable ML pipelines. Agents handle API lookups, error debugging, and best practice selection automatically.</p>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>&#128161; Intelligent Planning</h4>
+                    <p>Agents plan, reason, and select optimal techniques. They know when to use distributed training vs. single-node, which HPO strategy fits, and how to structure DAGs.</p>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>&#128101; Democratized Access</h4>
+                    <p>Non-technical teams can prototype models and explore ML concepts using plain English. Strategy teams at companies like Kargo use Cortex Code to scope new ideas.</p>
+                </div>
+                <div class="card anim-fade d6">
+                    <h4>&#128736; Continuously Evolving</h4>
+                    <p>As Snowflake ML ships new capabilities (distributed training, DAG orchestration, multimodal inference), Cortex Code automatically incorporates them.</p>
+                </div>
+            </div>
+            <div class="highlight-box anim-fade d7">
+                <h4>Cortex Code (GA)</h4>
+                <p>Snowflake's AI coding agent for ML workflows. Available in Snowsight (notebooks), VS Code, Cursor, and CLI. Generates verified, executable ML pipelines. ML-specific skills cover training, deployment, distributed processing, HPO, monitoring, and more.</p>
+            </div>
+        </section>
+
+        <!-- AGENTIC INFERENCE -->
+        <section class="slide" id="agentic-inference">
+            <h2 class="anim-fade d1">Inferencing Through an Agent</h2>
+            <p class="anim-fade d2">Cortex Agents can invoke registered ML models as tools, combining LLM reasoning with predictive model outputs. This creates powerful workflows where the agent understands the user's intent, retrieves relevant data, calls the appropriate ML model, and synthesizes a human-readable answer with actionable recommendations.</p>
+            <div class="mermaid anim-fade d3">
+                graph LR
+                    A[User Query] --> B[Cortex Agent]
+                    B --> C[LLM Reasoning]
+                    B --> D[ML Model Tool]
+                    D --> E[Model Registry]
+                    E --> F[Prediction]
+                    C --> G[Synthesized Answer]
+                    F --> G
+                    style A fill:#1E293B,stroke:#29B5E8
+                    style B fill:#1E293B,stroke:#7C3AED
+                    style C fill:#1E293B,stroke:#7C3AED
+                    style D fill:#1E293B,stroke:#F59E0B
+                    style E fill:#1E293B,stroke:#F59E0B
+                    style F fill:#1E293B,stroke:#10B981
+                    style G fill:#1E293B,stroke:#10B981
+            </div>
+            <div class="highlight-box anim-fade d4">
+                <h4>Example Use Case</h4>
+                <p><strong>User:</strong> "What's the churn risk for customer #12345 and what should we do about it?"</p>
+                <p><strong>Agent:</strong> Retrieves customer features from Feature Store &rarr; Calls churn model &rarr; Gets 87% churn probability &rarr; Analyzes contributing factors &rarr; Recommends retention offer based on customer segment.</p>
+            </div>
+            <div class="context-box anim-fade d5">
+                <h4>Architecture Pattern</h4>
+                <p>The ML model is registered as a "tool" the agent can call. The agent's LLM decides when to invoke the tool based on user intent, passes appropriate inputs, and interprets the model output in context. This combines the flexibility of LLMs with the precision of trained ML models.</p>
+            </div>
+        </section>
+
+        <!-- AGENTIC OBSERVABILITY -->
+        <section class="slide" id="agentic-observability">
+            <h2 class="anim-fade d1">Agents for Model Observability</h2>
+            <p class="anim-fade d2">Beyond inference, agents excel at ML operations tasks. Cortex Code can automatically diagnose model performance issues, trace drift root causes through lineage, evaluate feature importance, and recommend (or execute) retraining strategies. This transforms reactive troubleshooting into proactive maintenance.</p>
+            <div class="card-grid">
+                <div class="card anim-fade d3">
+                    <h4>&#128269; Automated Diagnosis</h4>
+                    <p>"Why did accuracy drop last week?" &rarr; Agent queries drift metrics, identifies top drifting features, traces upstream data changes via lineage, and reports root cause.</p>
+                </div>
+                <div class="card anim-fade d4">
+                    <h4>&#128295; Feature Recommendations</h4>
+                    <p>Evaluate feature importance across model types, identify redundant or fragile features, and surface where the model is weakest with new feature ideas.</p>
+                </div>
+                <div class="card anim-fade d5">
+                    <h4>&#128640; Auto-Remediation</h4>
+                    <p>Agent can trigger retraining pipelines, update feature transformations, register improved model versions, and update the default version &mdash; all from a single prompt.</p>
+                </div>
+            </div>
+            <pre class="anim-fade d6"><code><span class="comment"># Example: Natural language prompt to Cortex Code</span>
+<span class="string">"Analyze the drift metrics for my churn model over the last
+30 days. Identify which features are drifting most, check if
+the upstream data pipeline had any issues, and recommend
+whether retraining is needed. If yes, trigger a retraining
+job on the gpu_training_pool with the latest data."</span>
+
+<span class="comment"># Cortex Code will:</span>
+<span class="comment"># 1. Query MODEL_MONITOR_DRIFT_METRIC for all features</span>
+<span class="comment"># 2. Identify top drifters (PSI > threshold)</span>
+<span class="comment"># 3. Trace lineage to find upstream changes</span>
+<span class="comment"># 4. Make a recommendation with evidence</span>
+<span class="comment"># 5. Submit an ML Job if retraining is approved</span></code></pre>
+        </section>
+
+        <!-- CITATIONS -->
+        <section class="slide" id="citations">
+            <h2 class="anim-fade d1">References & Citations</h2>
+            <div class="citations anim-fade d2">
+                <ol>
+                    <li><a href="https://docs.snowflake.com/en/developer-guide/snowflake-ml/feature-store/overview" target="_blank">Snowflake Feature Store Documentation</a></li>
+                    <li><a href="https://docs.snowflake.com/en/developer-guide/snowflake-ml/model-registry/overview" target="_blank">Snowflake Model Registry Documentation</a></li>
+                    <li><a href="https://docs.snowflake.com/en/developer-guide/snowflake-ml/ml-jobs/overview" target="_blank">Snowflake ML Jobs Documentation</a></li>
+                    <li><a href="https://docs.snowflake.com/en/developer-guide/snowflake-ml/model-registry/model-observability" target="_blank">ML Observability: Monitoring Model Behavior Over Time</a></li>
+                    <li><a href="https://www.snowflake.com/en/blog/agentic-ml-snowflake-predictive-insights/" target="_blank">Automate the Path from Data to Predictive Insights with Agentic ML - Snowflake Blog (Mar 2026)</a></li>
+                    <li><a href="https://docs.snowflake.com/en/developer-guide/snowflake-ml/feature-store/feature-views" target="_blank">Working with Feature Views - Snowflake Documentation</a></li>
+                    <li><a href="https://docs.snowflake.com/en/developer-guide/snowflake-ml/overview" target="_blank">Snowflake ML: End-to-End Machine Learning</a></li>
+                    <li><a href="https://www.snowflake.com/en/blog/production-ml-workflows/" target="_blank">Modernizing the ML Stack: Agentic, Multimodal and Real-Time Workflows - Snowflake Blog (Feb 2026)</a></li>
+                </ol>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'dark',
+            themeVariables: {
+                primaryColor: '#1E293B',
+                primaryTextColor: '#E5E7EB',
+                primaryBorderColor: '#29B5E8',
+                lineColor: '#29B5E8',
+                secondaryColor: '#1E293B',
+                tertiaryColor: '#1E293B',
+                fontFamily: '-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif'
+            }
+        });
+
+        const navItems = document.querySelectorAll('.nav-item');
+        const mainEl = document.getElementById('main');
+        const progressBar = document.getElementById('progressBar');
+
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const slideId = item.dataset.slide;
+                const slide = document.getElementById(slideId);
+                if (slide) {
+                    slide.scrollIntoView({ behavior: 'smooth' });
+                    navItems.forEach(n => n.classList.remove('active'));
+                    item.classList.add('active');
+                }
+            });
+        });
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    const id = entry.target.id;
+                    navItems.forEach(n => {
+                        n.classList.toggle('active', n.dataset.slide === id);
+                    });
+                } else {
+                    entry.target.classList.remove('visible');
+                }
+            });
+        }, { threshold: 0.08 });
+
+        document.querySelectorAll('.slide').forEach(slide => observer.observe(slide));
+
+        mainEl.addEventListener('scroll', () => {
+            const scrollTop = mainEl.scrollTop;
+            const scrollHeight = mainEl.scrollHeight - mainEl.clientHeight;
+            const progress = (scrollTop / scrollHeight) * 100;
+            progressBar.style.width = progress + '%';
+        });
+    </script>
+</body>
+</html>
