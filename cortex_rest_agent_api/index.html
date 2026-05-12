@@ -1,0 +1,1481 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<title>Cortex Agents Run API - Response Mapping Guide</title>
+<style>
+:root, [data-theme="dark"] {
+  --sf-blue: #29B5E8;
+  --purple: #7C3AED;
+  --green: #10B981;
+  --orange: #F59E0B;
+  --bg-darker: #0F1B2D;
+  --bg-dark: #1B2A4A;
+  --bg-card: #1E2D4D;
+  --text: #E2E8F0;
+  --text-muted: #94A3B8;
+  --border: rgba(41,181,232,0.15);
+  --code-bg: #0D1520;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --scrollbar-thumb: var(--sf-blue);
+  --scrollbar-track: var(--bg-darker);
+  --shadow-card: rgba(0,0,0,0.3);
+  --pill-bg-alpha: 0.1;
+  --slide-even-bg: rgba(27,42,74,0.3);
+  --taxonomy-bg: rgba(15,27,45,0.6);
+  --mermaid-theme: dark;
+}
+[data-theme="light"] {
+  --sf-blue: #29B5E8;
+  --purple: #7C3AED;
+  --green: #10B981;
+  --orange: #F59E0B;
+  --bg-darker: #e4e4e4;
+  --bg-dark: #d4d4d4;
+  --bg-card: #ffffff;
+  --text: #383838;
+  --text-muted: #64748B;
+  --border: rgba(41,181,232,0.22);
+  --code-bg: #f1f5f9;
+  --scrollbar-thumb: var(--sf-blue);
+  --scrollbar-track: var(--bg-darker);
+  --shadow-card: rgba(0,0,0,0.08);
+  --pill-bg-alpha: 0.12;
+  --slide-even-bg: rgba(41,181,232,0.04);
+  --taxonomy-bg: rgba(226,232,240,0.7);
+  --mermaid-theme: default;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior: smooth; scrollbar-width: thin; scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track); }
+body { font-family: var(--font); background: var(--bg-darker); color: var(--text); line-height:1.5; overflow-x:hidden; }
+
+/* Progress bar */
+#progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg, var(--sf-blue), var(--purple)); z-index:1000; transition: width 0.15s; width:0%; }
+
+/* Sidebar */
+#sidebar {
+  position:fixed; left:0; top:0; bottom:0; width:220px; background:var(--bg-dark);
+  border-right:1px solid var(--border); z-index:100; padding:1.2rem 0; overflow-y:auto;
+  display:flex; flex-direction:column;
+}
+#sidebar .logo { padding:0 1rem 1rem; font-size:0.85rem; font-weight:700; color:var(--sf-blue); letter-spacing:0.5px; border-bottom:1px solid var(--border); margin-bottom:0.6rem; }
+#sidebar a {
+  display:block; padding:0.35rem 1rem; font-size:0.72rem; color:var(--text-muted);
+  text-decoration:none; transition:all 0.2s; border-left:2px solid transparent;
+}
+#sidebar a:hover { color:var(--text); background:rgba(41,181,232,0.06); }
+#sidebar a.active { color:var(--sf-blue); border-left-color:var(--sf-blue); background:rgba(41,181,232,0.08); font-weight:600; }
+
+/* Theme toggle switch */
+.theme-switch {
+  display:flex; align-items:center; gap:0.5rem;
+  margin:auto 1rem 0.6rem; padding-top:0.6rem; border-top:1px solid var(--border);
+  cursor:pointer; user-select:none;
+}
+.theme-switch .material-icons { font-size:1rem; color:var(--text-muted); transition:color 0.25s; }
+.theme-switch .material-icons.active { color:var(--sf-blue); }
+.switch-track {
+  position:relative; width:36px; height:20px; border-radius:10px;
+  background:var(--border); transition:background 0.25s; flex-shrink:0;
+}
+.switch-track.on { background:var(--sf-blue); }
+.switch-thumb {
+  position:absolute; top:2px; left:2px; width:16px; height:16px;
+  border-radius:50%; background:var(--bg-card); transition:transform 0.25s;
+  box-shadow:0 1px 3px rgba(0,0,0,0.3);
+}
+.switch-track.on .switch-thumb { transform:translateX(16px); }
+
+/* Main content */
+main { margin-left:220px; }
+
+/* Slides */
+.slide {
+  min-height:100vh; padding:3rem 3.5rem; display:flex; flex-direction:column;
+  justify-content:center; position:relative; overflow-y:auto;
+}
+.slide:nth-child(even) { background:var(--slide-even-bg); }
+
+/* Headings */
+h1 { font-size:2.2rem; font-weight:800; margin-bottom:0.4rem; }
+h2 { font-size:1.5rem; font-weight:700; color:var(--sf-blue); margin-bottom:0.8rem; }
+h3 { font-size:1.05rem; font-weight:600; color:var(--purple); margin-bottom:0.5rem; }
+h4 { font-size:0.9rem; font-weight:600; color:var(--text); margin-bottom:0.3rem; }
+p, li { font-size:0.82rem; color:var(--text-muted); }
+p { margin-bottom:0.5rem; }
+
+/* Pills */
+.pill {
+  display:inline-block; padding:0.2rem 0.7rem; border-radius:20px; font-size:0.68rem;
+  font-weight:600; margin:0.15rem; border:1px solid;
+}
+.pill-blue { color:var(--sf-blue); border-color:var(--sf-blue); background:rgba(41,181,232,0.1); }
+.pill-purple { color:var(--purple); border-color:var(--purple); background:rgba(124,58,237,0.1); }
+.pill-green { color:var(--green); border-color:var(--green); background:rgba(16,185,129,0.1); }
+.pill-orange { color:var(--orange); border-color:var(--orange); background:rgba(245,158,11,0.1); }
+
+/* Cards */
+.card-grid { display:grid; gap:1rem; margin:0.8rem 0; }
+.card-grid-2 { grid-template-columns:1fr 1fr; }
+.card-grid-3 { grid-template-columns:1fr 1fr 1fr; }
+.card-grid-4 { grid-template-columns:1fr 1fr 1fr 1fr; }
+.card {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:10px;
+  padding:1rem; transition:transform 0.25s, box-shadow 0.25s;
+}
+.card:hover { transform:translateY(-3px) scale(1.01); box-shadow:0 8px 25px rgba(41,181,232,0.12); }
+.card h4 { margin-bottom:0.3rem; }
+
+/* Code blocks */
+pre {
+  background:var(--code-bg); border:1px solid var(--border); border-radius:8px;
+  padding:0.7rem; margin:0.5rem 0; overflow-x:auto; font-size:0.74rem;
+  font-family:var(--mono); line-height:1.5; transition:box-shadow 0.3s;
+}
+pre:hover { box-shadow:0 0 15px rgba(41,181,232,0.15); }
+code { font-family:var(--mono); font-size:0.74rem; }
+.hl-key { color:#7DD3FC; }
+.hl-str { color:#86EFAC; }
+.hl-num { color:#FCA5A5; }
+.hl-bool { color:#C4B5FD; }
+.hl-comment { color:#64748B; font-style:italic; }
+.hl-event { color:#FBBF24; font-weight:600; }
+[data-theme="light"] .hl-key { color:#0369A1; }
+[data-theme="light"] .hl-str { color:#15803D; }
+[data-theme="light"] .hl-num { color:#DC2626; }
+[data-theme="light"] .hl-bool { color:#7C3AED; }
+[data-theme="light"] .hl-comment { color:#94A3B8; }
+[data-theme="light"] .hl-event { color:#B45309; }
+[data-theme="light"] .hero-title { -webkit-text-fill-color:transparent; }
+
+/* Callout boxes */
+.highlight-box, .context-box, .warning-box {
+  border-radius:8px; padding:0.7rem 0.9rem; margin:0.6rem 0; font-size:0.78rem;
+}
+.highlight-box { background:linear-gradient(135deg, rgba(41,181,232,0.1), rgba(124,58,237,0.1)); border-left:3px solid var(--sf-blue); }
+.context-box { background:rgba(16,185,129,0.08); border-left:3px solid var(--green); }
+.warning-box { background:rgba(245,158,11,0.08); border-left:3px solid var(--orange); }
+
+/* Stats */
+.stat-row { display:flex; gap:1.2rem; margin:0.8rem 0; flex-wrap:wrap; }
+.stat { text-align:center; }
+.stat-val { font-size:1.6rem; font-weight:800; color:var(--sf-blue); }
+.stat-label { font-size:0.68rem; color:var(--text-muted); }
+
+/* Tables */
+table { width:100%; border-collapse:collapse; font-size:0.76rem; margin:0.5rem 0; }
+th { background:var(--bg-dark); color:var(--sf-blue); padding:0.45rem 0.6rem; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:0.4rem 0.6rem; border-bottom:1px solid var(--border); color:var(--text-muted); }
+tr:hover td { background:rgba(41,181,232,0.04); }
+td code { background:var(--code-bg); padding:0.1rem 0.35rem; border-radius:3px; font-size:0.72rem; }
+
+/* Flow steps */
+.flow-steps { display:flex; align-items:center; gap:0; flex-wrap:wrap; margin:0.8rem 0; }
+.flow-step {
+  background:var(--bg-card); border:1px solid var(--border); border-radius:8px;
+  padding:0.5rem 0.8rem; font-size:0.72rem; position:relative;
+}
+.flow-arrow { color:var(--sf-blue); font-size:1.2rem; margin:0 0.3rem; }
+
+/* Two column */
+.two-col { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+
+/* Mermaid */
+.mermaid { margin:0.8rem 0; overflow-x:auto; }
+.mermaid svg { max-width:100%; }
+
+/* Taxonomy events */
+.taxonomy-events { display:flex; flex-direction:column; gap:0.3rem; }
+.taxonomy-event {
+  display:flex; align-items:center; gap:0.6rem; padding:0.3rem 0.55rem;
+  background:var(--taxonomy-bg); border-radius:5px; font-size:0.74rem;
+  transition:background 0.2s, transform 0.2s;
+}
+.taxonomy-event:hover { background:rgba(41,181,232,0.08); transform:translateX(3px); }
+.taxonomy-event code { font-size:0.72rem; color:var(--text); white-space:nowrap; font-weight:600; }
+.taxonomy-desc { color:var(--text-muted); font-size:0.68rem; }
+.taxonomy-arrow {
+  text-align:center; color:var(--purple); font-size:0.72rem; margin-top:0.45rem;
+  opacity:0.7; letter-spacing:0.3px;
+}
+
+/* UI Rendering Map */
+.ui-map-header {
+  display:grid; grid-template-columns:180px 1fr 1fr; gap:0;
+  margin-bottom:4px;
+}
+.ui-map-header span {
+  font-size:0.6rem; font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+  padding:0.35rem 0.7rem;
+}
+.ui-map-header .hdr-label { background:transparent; }
+.ui-map-header .hdr-stream {
+  background:rgba(41,181,232,0.06); color:var(--sf-blue);
+  border-radius:6px 0 0 6px; border:1px solid rgba(41,181,232,0.12); border-right:none;
+}
+.ui-map-header .hdr-json {
+  background:rgba(16,185,129,0.06); color:var(--green);
+  border-radius:0 6px 6px 0; border:1px solid rgba(16,185,129,0.12); border-left:none;
+}
+.ui-map-row {
+  display:grid; grid-template-columns:180px 1fr 1fr; gap:0; align-items:stretch;
+  margin-bottom:2px; min-height:0;
+}
+.ui-map-label {
+  display:flex; align-items:center; gap:0.5rem; padding:0.45rem 0.7rem;
+  background:var(--bg-card); border:1px solid var(--border); border-right:none;
+  border-radius:8px 0 0 8px; font-weight:700; font-size:0.74rem; white-space:nowrap;
+}
+.ui-map-label .ui-icon {
+  width:22px; height:22px; border-radius:5px; display:flex; align-items:center;
+  justify-content:center; font-size:0.68rem; flex-shrink:0;
+}
+.ui-map-stream, .ui-map-json {
+  display:flex; align-items:center; gap:0.3rem; padding:0.4rem 0.6rem;
+  border:1px solid var(--border); flex-wrap:wrap; min-height:0;
+}
+.ui-map-stream {
+  background:rgba(41,181,232,0.04); border-left:none; border-right:none;
+}
+.ui-map-json {
+  background:rgba(16,185,129,0.04); border-left:none;
+  border-radius:0 8px 8px 0;
+}
+.ui-map-stream code, .ui-map-json code {
+  font-size:0.63rem; padding:0.15rem 0.4rem; border-radius:4px;
+  background:var(--code-bg); border:1px solid var(--border); white-space:nowrap;
+  transition:background 0.2s, transform 0.15s;
+}
+.ui-map-stream code:hover, .ui-map-json code:hover { background:rgba(41,181,232,0.12); transform:translateY(-1px); }
+.map-arrow { color:var(--text-muted); font-size:0.6rem; opacity:0.6; }
+.map-path {
+  font-size:0.58rem; color:var(--text-muted); font-family:var(--mono);
+  background:rgba(124,58,237,0.08); padding:0.1rem 0.35rem; border-radius:3px;
+  border:1px dashed rgba(124,58,237,0.25);
+}
+.map-hint { font-size:0.56rem; color:var(--text-muted); }
+.ui-map-na {
+  font-size:0.6rem; color:var(--text-muted); opacity:0.5; font-style:italic;
+}
+.ui-map-phase {
+  grid-column:1/-1; font-size:0.6rem; font-weight:700; letter-spacing:1px;
+  text-transform:uppercase; padding:0.5rem 0 0.15rem 0.3rem;
+}
+
+/* Animations */
+.anim-fade { opacity:0; transform:translateY(20px); transition:opacity 0.6s ease, transform 0.6s ease; }
+.anim-blur { opacity:0; filter:blur(8px); transition:opacity 0.8s ease, filter 0.8s ease; }
+.anim-scale { opacity:0; transform:scale(0.9); transition:opacity 0.5s ease, transform 0.5s ease; }
+.anim-slide-left { opacity:0; transform:translateX(-30px); transition:opacity 0.6s ease, transform 0.6s ease; }
+.anim-slide-right { opacity:0; transform:translateX(30px); transition:opacity 0.6s ease, transform 0.6s ease; }
+.visible { opacity:1 !important; transform:translate(0,0) scale(1) !important; filter:blur(0) !important; }
+
+/* Hero specific */
+.hero-title { font-size:2.8rem; font-weight:900; background:linear-gradient(135deg, var(--sf-blue), var(--purple)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+.hero-sub { font-size:1.1rem; color:var(--text-muted); margin:0.4rem 0 1rem; }
+
+/* Delay classes */
+.d1 { transition-delay:0.1s !important; }
+.d2 { transition-delay:0.2s !important; }
+.d3 { transition-delay:0.3s !important; }
+.d4 { transition-delay:0.4s !important; }
+.d5 { transition-delay:0.5s !important; }
+.d6 { transition-delay:0.6s !important; }
+.d7 { transition-delay:0.7s !important; }
+
+/* Responsive */
+@media (max-width:1100px) {
+  #sidebar { display:none; }
+  main { margin-left:0; }
+  .card-grid-3, .card-grid-4 { grid-template-columns:1fr 1fr; }
+  .two-col { grid-template-columns:1fr; }
+}
+@media (max-width:700px) {
+  .card-grid-2 { grid-template-columns:1fr; }
+  .slide { padding:2rem 1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+
+<nav id="sidebar">
+  <div class="logo">CORTEX AGENTS API</div>
+  <a href="#hero">Overview</a>
+  <a href="#two-modes">Streaming vs Non-Streaming</a>
+  <a href="#event-taxonomy">Event Taxonomy</a>
+  <a href="#thinking">Thinking Events</a>
+  <a href="#text-events">Text &amp; Annotations</a>
+  <a href="#tool-events">Tool Events</a>
+  <a href="#analyst-delta">Analyst Delta</a>
+  <a href="#rich-content">Tables &amp; Charts</a>
+  <a href="#status-events">Status / Warning / Error</a>
+  <a href="#metadata">Metadata &amp; Threads</a>
+  <a href="#non-streaming">Non-Streaming Response</a>
+  <a href="#ui-render-map">UI Rendering Map</a>
+  <a href="#content-mapping">Content Type Map</a>
+  <a href="#flow-example">Full Flow Example</a>
+  <a href="#schemas">Schema Reference</a>
+  <div class="theme-switch" onclick="toggleTheme()">
+    <span class="material-icons active" id="icon-dark">dark_mode</span>
+    <div class="switch-track" id="switch-track"><div class="switch-thumb"></div></div>
+    <span class="material-icons" id="icon-light">light_mode</span>
+  </div>
+</nav>
+
+<main>
+
+<!-- ==================== SLIDE 1: HERO ==================== -->
+<section class="slide" id="hero">
+  <div>
+    <div class="hero-title anim-blur">Cortex Agents Run API</div>
+    <p class="hero-sub anim-blur d1">Response Mapping Guide &mdash; Streaming &amp; Non-Streaming</p>
+    <p class="anim-fade d2" style="font-size:0.82rem;">A visual reference for engineers to map every SSE event and JSON field to the UI elements they render: text, thinking, SQL, tables, charts, annotations, and status indicators.</p>
+    <div style="margin-top:1rem;" class="anim-fade d3">
+      <span class="pill pill-blue">SSE Streaming</span>
+      <span class="pill pill-purple">Thinking Tokens</span>
+      <span class="pill pill-green">Tool Results</span>
+      <span class="pill pill-orange">Charts &amp; Tables</span>
+    </div>
+    <div class="stat-row anim-fade d4">
+      <div class="stat"><div class="stat-val">14</div><div class="stat-label">Event Types</div></div>
+      <div class="stat"><div class="stat-val">6</div><div class="stat-label">Content Types</div></div>
+      <div class="stat"><div class="stat-val">2</div><div class="stat-label">Response Modes</div></div>
+      <div class="stat"><div class="stat-val">30+</div><div class="stat-label">Schemas</div></div>
+    </div>
+    <div class="highlight-box anim-fade d5">
+      Source: <a href="https://docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-run" style="color:var(--sf-blue);">docs.snowflake.com/en/user-guide/snowflake-cortex/cortex-agents-run</a>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 2: TWO MODES ==================== -->
+<section class="slide" id="two-modes">
+  <h2 class="anim-fade">Streaming vs Non-Streaming</h2>
+  <p class="anim-fade d1">The <code>agent:run</code> API supports two response modes controlled by the <code>stream</code> boolean in the request body.</p>
+
+  <div class="two-col" style="margin-top:1rem;">
+    <div class="card anim-slide-left d2">
+      <h3 style="color:var(--sf-blue);">Streaming (default)</h3>
+      <p><code>stream: true</code> or omitted &rarr; SSE events via <code>text/event-stream</code></p>
+      <ul style="padding-left:1rem;margin:0.4rem 0;">
+        <li>Token-by-token typewriter effect</li>
+        <li>Delta events for thinking &amp; text</li>
+        <li>Tool use/result events as they happen</li>
+        <li>Final <code>response</code> event aggregates all</li>
+      </ul>
+      <pre><span class="hl-event">event:</span> response.text.delta
+<span class="hl-event">data:</span> {<span class="hl-key">"content_index"</span>: <span class="hl-num">0</span>, <span class="hl-key">"text"</span>: <span class="hl-str">"Hello"</span>}</pre>
+    </div>
+    <div class="card anim-slide-right d2">
+      <h3 style="color:var(--purple);">Non-Streaming</h3>
+      <p><code>stream: false</code> &rarr; single JSON via <code>application/json</code></p>
+      <ul style="padding-left:1rem;margin:0.4rem 0;">
+        <li>Waits for full processing</li>
+        <li>Returns complete <code>response</code> object</li>
+        <li>Same schema as streaming <code>response</code> event</li>
+        <li>Simpler to consume, higher latency</li>
+      </ul>
+      <pre>{<span class="hl-key">"role"</span>: <span class="hl-str">"assistant"</span>,
+ <span class="hl-key">"content"</span>: [... <span class="hl-comment">// all content items</span> ],
+ <span class="hl-key">"metadata"</span>: {<span class="hl-key">"usage"</span>: ...}}</pre>
+    </div>
+  </div>
+
+  <div class="context-box anim-fade d3">
+    <strong>Tip:</strong> For non-streaming clients, you can subscribe only to the final <code>response</code> event in streaming mode &mdash; it is the logical aggregation of all prior events.
+  </div>
+</section>
+
+<!-- ==================== SLIDE 3: EVENT TAXONOMY ==================== -->
+<section class="slide" id="event-taxonomy">
+  <h2 class="anim-fade">Streaming Event Taxonomy</h2>
+  <p class="anim-fade d1">Every SSE event has a named <code>event:</code> field and a <code>data:</code> JSON payload. Events fall into four categories.</p>
+
+  <div class="card-grid card-grid-2" style="margin-top:0.6rem;">
+
+    <div class="card anim-slide-left d2" style="border-top:3px solid var(--purple);padding-bottom:0.6rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--purple);display:inline-block;"></span>
+        <h4 style="margin:0;color:var(--purple);font-size:0.88rem;">Delta Events</h4>
+        <span style="font-size:0.65rem;color:var(--text-muted);margin-left:auto;">token-by-token</span>
+      </div>
+      <p style="font-size:0.72rem;margin-bottom:0.5rem;">Individual tokens streamed for typewriter rendering. Accumulate these to build the final block.</p>
+      <div class="taxonomy-events">
+        <div class="taxonomy-event" style="border-left:2px solid var(--purple);">
+          <code>response.thinking.delta</code>
+          <span class="taxonomy-desc">Reasoning token + signature</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--purple);">
+          <code>response.text.delta</code>
+          <span class="taxonomy-desc">Answer token + elicitation flag</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--purple);">
+          <code>response.tool_result.analyst.delta</code>
+          <span class="taxonomy-desc">Analyst: SQL, think, result_set, suggestions</span>
+        </div>
+      </div>
+      <div class="taxonomy-arrow">&#9660; aggregates into</div>
+    </div>
+
+    <div class="card anim-slide-right d2" style="border-top:3px solid var(--sf-blue);padding-bottom:0.6rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--sf-blue);display:inline-block;"></span>
+        <h4 style="margin:0;color:var(--sf-blue);font-size:0.88rem;">Content Item Events</h4>
+        <span style="font-size:0.65rem;color:var(--text-muted);margin-left:auto;">aggregated blocks</span>
+      </div>
+      <p style="font-size:0.72rem;margin-bottom:0.5rem;">Complete content blocks emitted once a section finishes streaming. These populate the final <code>content[]</code> array.</p>
+      <div class="taxonomy-events">
+        <div class="taxonomy-event" style="border-left:2px solid var(--sf-blue);">
+          <code>response.thinking</code>
+          <span class="taxonomy-desc">Full reasoning text</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--sf-blue);">
+          <code>response.text</code>
+          <span class="taxonomy-desc">Full answer + annotations[]</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--sf-blue);">
+          <code>response.text.annotation</code>
+          <span class="taxonomy-desc">Individual citation object</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--sf-blue);">
+          <code>response.tool_use</code>
+          <span class="taxonomy-desc">Tool invocation request</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--sf-blue);">
+          <code>response.tool_result</code>
+          <span class="taxonomy-desc">Tool output + status</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--sf-blue);">
+          <code>response.table</code>
+          <span class="taxonomy-desc">ResultSet + title</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--sf-blue);">
+          <code>response.chart</code>
+          <span class="taxonomy-desc">Vega-Lite chart_spec</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card anim-slide-left d3" style="border-top:3px solid var(--orange);padding-bottom:0.6rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--orange);display:inline-block;"></span>
+        <h4 style="margin:0;color:var(--orange);font-size:0.88rem;">Status Events</h4>
+        <span style="font-size:0.65rem;color:var(--text-muted);margin-left:auto;">progress &amp; warnings</span>
+      </div>
+      <p style="font-size:0.72rem;margin-bottom:0.5rem;">Lifecycle updates for progress indicators. Non-fatal warnings keep the stream alive.</p>
+      <div class="taxonomy-events">
+        <div class="taxonomy-event" style="border-left:2px solid var(--orange);">
+          <code>response.status</code>
+          <span class="taxonomy-desc">planning, executing_tool, proceeding_to_answer</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--orange);">
+          <code>response.tool_result.status</code>
+          <span class="taxonomy-desc">Per-tool progress (e.g. "Executing SQL")</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--orange);">
+          <code>response.warning</code>
+          <span class="taxonomy-desc">Non-fatal issue; stream continues</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card anim-slide-right d3" style="border-top:3px solid var(--green);padding-bottom:0.6rem;">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem;">
+        <span style="width:10px;height:10px;border-radius:50%;background:var(--green);display:inline-block;"></span>
+        <h4 style="margin:0;color:var(--green);font-size:0.88rem;">Terminal Events</h4>
+        <span style="font-size:0.65rem;color:var(--text-muted);margin-left:auto;">stream end</span>
+      </div>
+      <p style="font-size:0.72rem;margin-bottom:0.5rem;">Final events that close the stream. The <code>response</code> event is the aggregation of all prior events.</p>
+      <div class="taxonomy-events">
+        <div class="taxonomy-event" style="border-left:2px solid var(--green);">
+          <code>response</code>
+          <span class="taxonomy-desc">Complete aggregated response (last event)</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid #EF4444;">
+          <code>error</code>
+          <span class="taxonomy-desc">Fatal error; code + message + request_id</span>
+        </div>
+        <div class="taxonomy-event" style="border-left:2px solid var(--green);">
+          <code>metadata</code>
+          <span class="taxonomy-desc">Thread message_id + run_id</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="highlight-box anim-fade d4" style="margin-top:0.5rem;">
+    <strong>Data Flow:</strong>&ensp;
+    <span class="pill pill-purple" style="font-size:0.62rem;">Deltas</span>
+    <span style="color:var(--text-muted);margin:0 0.2rem;">&rarr;</span>
+    <span class="pill pill-blue" style="font-size:0.62rem;">Content Items</span>
+    <span style="color:var(--text-muted);margin:0 0.2rem;">&rarr;</span>
+    <span class="pill pill-green" style="font-size:0.62rem;">response (final)</span>
+    &ensp;<span style="font-size:0.74rem;color:var(--text-muted);">&mdash; each category feeds into the next. Subscribe to deltas for real-time UX, or just the final <code>response</code> for simple clients.</span>
+  </div>
+
+  <div class="warning-box anim-fade d5">
+    <strong>Important:</strong> Your application must handle unknown event types gracefully. New events may be added in the future.
+  </div>
+</section>
+
+<!-- ==================== SLIDE 4: THINKING EVENTS ==================== -->
+<section class="slide" id="thinking">
+  <h2 class="anim-fade">Thinking Events</h2>
+  <p class="anim-fade d1">Reasoning tokens let you show the agent's internal thought process. These appear before the final answer.</p>
+
+  <div class="two-col" style="margin-top:0.8rem;">
+    <div class="anim-slide-left d2">
+      <h3>response.thinking.delta</h3>
+      <p>Streamed one token at a time. Use for a typewriter effect on reasoning.</p>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>content_index</code></td><td>integer</td><td>Position in content array</td></tr>
+        <tr><td><code>text</code></td><td>string</td><td>Single thinking token</td></tr>
+        <tr><td><code>signature</code></td><td>string</td><td>Token signature</td></tr>
+      </table>
+      <pre><span class="hl-event">event:</span> response.thinking.delta
+<span class="hl-event">data:</span> {
+  <span class="hl-key">"content_index"</span>: <span class="hl-num">0</span>,
+  <span class="hl-key">"text"</span>: <span class="hl-str">"The user is asking for a"</span>,
+  <span class="hl-key">"signature"</span>: <span class="hl-str">"lorem ipsum"</span>
+}</pre>
+    </div>
+    <div class="anim-slide-right d2">
+      <h3>response.thinking</h3>
+      <p>Aggregated content item once thinking block is complete.</p>
+      <table>
+        <tr><th>Field</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>content_index</code></td><td>integer</td><td>Position in content array</td></tr>
+        <tr><td><code>text</code></td><td>string</td><td>Full thinking text</td></tr>
+        <tr><td><code>signature</code></td><td>string</td><td>Signature</td></tr>
+      </table>
+      <pre><span class="hl-event">event:</span> response.thinking
+<span class="hl-event">data:</span> {
+  <span class="hl-key">"content_index"</span>: <span class="hl-num">0</span>,
+  <span class="hl-key">"text"</span>: <span class="hl-str">"To answer your question I must..."</span>,
+  <span class="hl-key">"signature"</span>: <span class="hl-str">"lorem ipsum"</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="highlight-box anim-fade d3">
+    <strong>UI Mapping:</strong> Render thinking tokens in a collapsible "Reasoning" panel with a dimmed or italic style. Accumulate <code>response.thinking.delta</code> tokens until <code>response.thinking</code> arrives with the final text.
+  </div>
+</section>
+
+<!-- ==================== SLIDE 5: TEXT & ANNOTATIONS ==================== -->
+<section class="slide" id="text-events">
+  <h2 class="anim-fade">Text &amp; Annotation Events</h2>
+  <p class="anim-fade d1">Text events carry the agent's final answer. Annotations attach citations from Cortex Search results.</p>
+
+  <div class="card-grid card-grid-3" style="margin-top:0.8rem;">
+    <div class="card anim-fade d2">
+      <h4><span class="pill pill-blue">response.text.delta</span></h4>
+      <p>Single answer token for typewriter rendering.</p>
+      <pre>{
+  <span class="hl-key">"content_index"</span>: <span class="hl-num">0</span>,
+  <span class="hl-key">"text"</span>: <span class="hl-str">"Hello"</span>,
+  <span class="hl-key">"is_elicitation"</span>: <span class="hl-bool">false</span>
+}</pre>
+    </div>
+    <div class="card anim-fade d3">
+      <h4><span class="pill pill-blue">response.text</span></h4>
+      <p>Aggregated text block with annotations array.</p>
+      <pre>{
+  <span class="hl-key">"content_index"</span>: <span class="hl-num">0</span>,
+  <span class="hl-key">"text"</span>: <span class="hl-str">"Lorem ipsum..."</span>,
+  <span class="hl-key">"annotations"</span>: [...],
+  <span class="hl-key">"is_elicitation"</span>: <span class="hl-bool">false</span>
+}</pre>
+    </div>
+    <div class="card anim-fade d4">
+      <h4><span class="pill pill-purple">response.text.annotation</span></h4>
+      <p>Individual annotation attached to text.</p>
+      <pre>{
+  <span class="hl-key">"content_index"</span>: <span class="hl-num">0</span>,
+  <span class="hl-key">"annotation_index"</span>: <span class="hl-num">0</span>,
+  <span class="hl-key">"annotation"</span>: {
+    <span class="hl-key">"type"</span>: <span class="hl-str">"cortex_search_citation"</span>,
+    <span class="hl-key">"doc_title"</span>: <span class="hl-str">"Earnings Report"</span>,
+    <span class="hl-key">"text"</span>: <span class="hl-str">"Revenue for 2025..."</span>
+  }
+}</pre>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:0.8rem;">
+    <div class="anim-fade d5">
+      <h3>Annotation Schema (cortex_search_citation)</h3>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>type</code></td><td>Always <code>cortex_search_citation</code></td></tr>
+        <tr><td><code>index</code></td><td>Citation index in search results</td></tr>
+        <tr><td><code>search_result_id</code></td><td>Unique ID for the search result</td></tr>
+        <tr><td><code>doc_id</code></td><td>Document UUID</td></tr>
+        <tr><td><code>doc_title</code></td><td>Document title</td></tr>
+        <tr><td><code>text</code></td><td>Cited excerpt</td></tr>
+      </table>
+    </div>
+    <div class="context-box anim-fade d5">
+      <strong>UI Mapping:</strong><br>
+      &bull; <code>response.text.delta</code> &rarr; Append tokens to answer panel<br>
+      &bull; <code>response.text.annotation</code> &rarr; Render inline citation markers (e.g. [1]) that expand on click<br>
+      &bull; <code>is_elicitation: true</code> &rarr; The agent is asking the user for more info &mdash; render as a prompt, not a final answer<br>
+      &bull; <code>response.text</code> &rarr; Final aggregated text; use for non-streaming display or as fallback
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 6: TOOL EVENTS ==================== -->
+<section class="slide" id="tool-events">
+  <h2 class="anim-fade">Tool Events</h2>
+  <p class="anim-fade d1">Tool events track the lifecycle of agent tool invocations: request, status updates, and results.</p>
+
+  <div class="flow-steps anim-fade d2">
+    <div class="flow-step" style="border-color:var(--purple);">response.tool_use<br><span style="font-size:0.65rem;color:var(--text-muted);">Agent requests tool</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step" style="border-color:var(--orange);">response.tool_result.status<br><span style="font-size:0.65rem;color:var(--text-muted);">Progress updates</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step" style="border-color:var(--sf-blue);">response.tool_result.analyst.delta<br><span style="font-size:0.65rem;color:var(--text-muted);">Analyst-specific deltas</span></div>
+    <span class="flow-arrow">&rarr;</span>
+    <div class="flow-step" style="border-color:var(--green);">response.tool_result<br><span style="font-size:0.65rem;color:var(--text-muted);">Final result</span></div>
+  </div>
+
+  <div class="two-col" style="margin-top:0.8rem;">
+    <div class="card anim-slide-left d3">
+      <h4>response.tool_use</h4>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>tool_use_id</code></td><td>Unique ID to correlate with results</td></tr>
+        <tr><td><code>type</code></td><td>Tool type (e.g. <code>cortex_analyst_text_to_sql</code>, <code>cortex_search</code>)</td></tr>
+        <tr><td><code>name</code></td><td>Tool instance name</td></tr>
+        <tr><td><code>input</code></td><td>Structured input (varies by tool spec)</td></tr>
+        <tr><td><code>client_side_execute</code></td><td>If <code>true</code>, client must execute</td></tr>
+      </table>
+    </div>
+    <div class="card anim-slide-right d3">
+      <h4>response.tool_result</h4>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>tool_use_id</code></td><td>Matches the requesting tool_use</td></tr>
+        <tr><td><code>type</code></td><td>Tool type</td></tr>
+        <tr><td><code>name</code></td><td>Tool instance name</td></tr>
+        <tr><td><code>content</code></td><td>Array of <code>ToolResultContent</code> (json or text)</td></tr>
+        <tr><td><code>status</code></td><td>Execution status (e.g. <code>success</code>)</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="highlight-box anim-fade d4">
+    <strong>UI Mapping:</strong> On <code>response.tool_use</code>, show a loading indicator with the tool name. On <code>response.tool_result.status</code>, update the status message. On <code>response.tool_result</code>, replace the loader with the result (table, chart, or JSON).
+  </div>
+</section>
+
+<!-- ==================== SLIDE 7: ANALYST DELTA ==================== -->
+<section class="slide" id="analyst-delta">
+  <h2 class="anim-fade">Cortex Analyst Delta Deep Dive</h2>
+  <p class="anim-fade d1">The <code>response.tool_result.analyst.delta</code> event streams rich data from Cortex Analyst tool execution, including SQL, result sets, and suggestions.</p>
+
+  <div class="card anim-scale d2" style="max-width:100%;">
+    <h4>CortexAnalystToolResultDelta</h4>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>What It Is</th><th>UI Rendering</th></tr>
+      <tr><td><code>text</code></td><td>string</td><td>Analyst's final response text</td><td>Answer text block</td></tr>
+      <tr><td><code>think</code></td><td>string</td><td>Analyst's reasoning steps</td><td>Collapsible reasoning panel</td></tr>
+      <tr><td><code>sql</code></td><td>string</td><td>Generated SQL query</td><td>Syntax-highlighted SQL block</td></tr>
+      <tr><td><code>sql_explanation</code></td><td>string</td><td>Explanation of the SQL</td><td>Expandable description under SQL</td></tr>
+      <tr><td><code>query_id</code></td><td>string</td><td>Snowflake query ID once SQL executes</td><td>Link to query history</td></tr>
+      <tr><td><code>verified_query_used</code></td><td>boolean</td><td>Whether a verified query (VQR) was used</td><td>Verified badge indicator</td></tr>
+      <tr><td><code>result_set</code></td><td>ResultSet</td><td>SQL execution results</td><td>Data table component</td></tr>
+      <tr><td><code>suggestions</code></td><td>CortexAnalystSuggestionDelta</td><td>Suggested follow-up questions</td><td>Clickable suggestion chips</td></tr>
+    </table>
+  </div>
+
+  <div class="two-col" style="margin-top:0.8rem;">
+    <div class="anim-slide-left d3">
+      <h3>Streaming Analyst Flow</h3>
+      <pre><span class="hl-comment">// 1. Thinking arrives first</span>
+<span class="hl-event">event:</span> response.tool_result.analyst.delta
+<span class="hl-event">data:</span> {<span class="hl-key">"delta"</span>: {<span class="hl-key">"think"</span>: <span class="hl-str">"Thinking..."</span>}}
+
+<span class="hl-comment">// 2. SQL query generated</span>
+<span class="hl-event">event:</span> response.tool_result.analyst.delta
+<span class="hl-event">data:</span> {<span class="hl-key">"delta"</span>: {<span class="hl-key">"sql"</span>: <span class="hl-str">"SELECT ..."</span>}}
+
+<span class="hl-comment">// 3. Query ID once execution starts</span>
+<span class="hl-event">event:</span> response.tool_result.analyst.delta
+<span class="hl-event">data:</span> {<span class="hl-key">"delta"</span>: {<span class="hl-key">"query_id"</span>: <span class="hl-str">"707787..."</span>}}
+
+<span class="hl-comment">// 4. Result set with data</span>
+<span class="hl-event">event:</span> response.tool_result.analyst.delta
+<span class="hl-event">data:</span> {<span class="hl-key">"delta"</span>: {<span class="hl-key">"result_set"</span>: {...}}}
+
+<span class="hl-comment">// 5. Final text response</span>
+<span class="hl-event">event:</span> response.tool_result.analyst.delta
+<span class="hl-event">data:</span> {<span class="hl-key">"delta"</span>: {<span class="hl-key">"text"</span>: <span class="hl-str">"The total..."</span>}}</pre>
+    </div>
+    <div class="anim-slide-right d3">
+      <h3>ResultSet Schema</h3>
+      <p>Matches the <a href="https://docs.snowflake.com/en/developer-guide/sql-api/reference#resultset" style="color:var(--sf-blue);">Snowflake SQL API ResultSet</a>.</p>
+      <pre>{
+  <span class="hl-key">"statementHandle"</span>: <span class="hl-str">"707787a0-..."</span>,
+  <span class="hl-key">"resultSetMetaData"</span>: {
+    <span class="hl-key">"numRows"</span>: <span class="hl-num">2</span>,
+    <span class="hl-key">"format"</span>: <span class="hl-str">"jsonv2"</span>,
+    <span class="hl-key">"rowType"</span>: [
+      {<span class="hl-key">"name"</span>:<span class="hl-str">"col"</span>, <span class="hl-key">"type"</span>:<span class="hl-str">"VARCHAR"</span>}
+    ]
+  },
+  <span class="hl-key">"data"</span>: [
+    [<span class="hl-str">"row1 col1"</span>, <span class="hl-str">"row1 col2"</span>],
+    [<span class="hl-str">"row2 col1"</span>, <span class="hl-str">"row2 col2"</span>]
+  ]
+}</pre>
+      <div class="warning-box" style="margin-top:0.5rem;">
+        <strong>Note:</strong> Currently the entire SQL comes in a single delta event, but may be streamed token-by-token in the future.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 8: TABLES & CHARTS ==================== -->
+<section class="slide" id="rich-content">
+  <h2 class="anim-fade">Tables &amp; Charts</h2>
+  <p class="anim-fade d1">Rich content events deliver visual data components. Tables carry SQL result data; charts carry Vega-Lite specifications.</p>
+
+  <div class="two-col" style="margin-top:0.8rem;">
+    <div class="card anim-slide-left d2">
+      <h3 style="color:var(--orange);">response.table</h3>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>content_index</code></td><td>Position in content array</td></tr>
+        <tr><td><code>tool_use_id</code></td><td>Originating tool use ID</td></tr>
+        <tr><td><code>query_id</code></td><td>SQL query ID that generated data</td></tr>
+        <tr><td><code>result_set</code></td><td>Full ResultSet (metadata + 2D data array)</td></tr>
+        <tr><td><code>title</code></td><td>Display title for the table</td></tr>
+      </table>
+      <pre><span class="hl-event">event:</span> response.table
+<span class="hl-event">data:</span> {
+  <span class="hl-key">"tool_use_id"</span>: <span class="hl-str">"toolu_123"</span>,
+  <span class="hl-key">"query_id"</span>: <span class="hl-str">"6ac75378-..."</span>,
+  <span class="hl-key">"title"</span>: <span class="hl-str">"Revenue by Month"</span>,
+  <span class="hl-key">"result_set"</span>: {
+    <span class="hl-key">"resultSetMetaData"</span>: {
+      <span class="hl-key">"rowType"</span>: [{<span class="hl-key">"name"</span>:<span class="hl-str">"MONTH"</span>,...}]
+    },
+    <span class="hl-key">"data"</span>: [[<span class="hl-str">"Jan"</span>,<span class="hl-str">"10000"</span>],...]
+  }
+}</pre>
+    </div>
+    <div class="card anim-slide-right d2">
+      <h3 style="color:var(--green);">response.chart</h3>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>content_index</code></td><td>Position in content array</td></tr>
+        <tr><td><code>tool_use_id</code></td><td>Originating tool use ID</td></tr>
+        <tr><td><code>chart_spec</code></td><td>Vega-Lite JSON spec (stringified)</td></tr>
+      </table>
+      <pre><span class="hl-event">event:</span> response.chart
+<span class="hl-event">data:</span> {
+  <span class="hl-key">"tool_use_id"</span>: <span class="hl-str">"toolu_123"</span>,
+  <span class="hl-key">"chart_spec"</span>: <span class="hl-str">"{\"$schema\":\"https://vega.github.io/schema/vega-lite/v5.json\",\"data\":{...},\"mark\":\"bar\"}"</span>
+}</pre>
+      <div class="context-box" style="margin-top:0.5rem;">
+        <strong>Rendering:</strong> Parse <code>chart_spec</code> with <code>JSON.parse()</code> and pass to Vega-Lite's <code>vegaEmbed()</code> or a Vega-Lite React component.
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight-box anim-fade d3">
+    <strong>Correlation:</strong> Use <code>tool_use_id</code> to link tables and charts back to the <code>response.tool_use</code> event that triggered them. This lets you group tool invocation + loading state + result in the same UI card.
+  </div>
+</section>
+
+<!-- ==================== SLIDE 9: STATUS EVENTS ==================== -->
+<section class="slide" id="status-events">
+  <h2 class="anim-fade">Status, Warning &amp; Error Events</h2>
+  <p class="anim-fade d1">These events provide lifecycle visibility and error handling.</p>
+
+  <div class="card-grid card-grid-3">
+    <div class="card anim-fade d2">
+      <h4><span class="pill pill-blue">response.status</span></h4>
+      <p>Agent-level execution status updates.</p>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>status</code></td><td>Current state enum</td></tr>
+        <tr><td><code>message</code></td><td>Descriptive message</td></tr>
+      </table>
+      <pre>{
+  <span class="hl-key">"status"</span>: <span class="hl-str">"executing_tool"</span>,
+  <span class="hl-key">"message"</span>: <span class="hl-str">"Executing tool `my_analyst_tool`"</span>
+}</pre>
+      <p style="margin-top:0.3rem;">Known statuses: <code>planning</code>, <code>reasoning_agent_stop</code>, <code>proceeding_to_answer</code>, <code>executing_tool</code></p>
+    </div>
+    <div class="card anim-fade d3">
+      <h4><span class="pill pill-orange">response.warning</span></h4>
+      <p>Non-fatal warnings. Stream continues.</p>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>message</code></td><td>Warning text</td></tr>
+      </table>
+      <pre>{
+  <span class="hl-key">"message"</span>: <span class="hl-str">"Unable to fetch tools from MCP server 'foo'. Response quality may be degraded."</span>
+}</pre>
+    </div>
+    <div class="card anim-fade d4">
+      <h4><span class="pill pill-orange" style="color:#EF4444;border-color:#EF4444;background:rgba(239,68,68,0.1);">error</span></h4>
+      <p>Fatal error. Stream terminates.</p>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>code</code></td><td>Snowflake error code</td></tr>
+        <tr><td><code>message</code></td><td>Error description</td></tr>
+        <tr><td><code>request_id</code></td><td>Request UUID</td></tr>
+      </table>
+      <pre>{
+  <span class="hl-key">"code"</span>: <span class="hl-str">"399504"</span>,
+  <span class="hl-key">"message"</span>: <span class="hl-str">"Error during execution"</span>,
+  <span class="hl-key">"request_id"</span>: <span class="hl-str">"61987ff6-..."</span>
+}</pre>
+    </div>
+  </div>
+
+  <div class="context-box anim-fade d5">
+    <strong>UI Mapping:</strong> Use <code>response.status</code> for progress indicators (e.g. "Planning...", "Executing tool..."). Show <code>response.warning</code> as dismissable banners. Show <code>error</code> as a red alert with the error code and request ID for debugging.
+  </div>
+</section>
+
+<!-- ==================== SLIDE 10: METADATA ==================== -->
+<section class="slide" id="metadata">
+  <h2 class="anim-fade">Metadata &amp; Thread Management</h2>
+  <p class="anim-fade d1">The <code>metadata</code> event provides thread/message IDs for multi-turn conversations.</p>
+
+  <div class="two-col">
+    <div class="card anim-slide-left d2">
+      <h4>metadata event</h4>
+      <table>
+        <tr><th>Field</th><th>Description</th></tr>
+        <tr><td><code>metadata.role</code></td><td><code>user</code> or <code>assistant</code></td></tr>
+        <tr><td><code>metadata.message_id</code></td><td>Thread message ID &mdash; use as <code>parent_message_id</code> for follow-ups</td></tr>
+        <tr><td><code>metadata.run_id</code></td><td>Unique Agent Run ID; can reconnect to stream</td></tr>
+      </table>
+      <pre><span class="hl-event">event:</span> metadata
+<span class="hl-event">data:</span> {
+  <span class="hl-key">"metadata"</span>: {
+    <span class="hl-key">"role"</span>: <span class="hl-str">"user"</span>,
+    <span class="hl-key">"message_id"</span>: <span class="hl-num">0</span>,
+    <span class="hl-key">"run_id"</span>: <span class="hl-str">"123-456"</span>
+  }
+}</pre>
+    </div>
+    <div class="anim-slide-right d2">
+      <h3>Thread Conversation Flow</h3>
+      <div class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1B2A4A','primaryTextColor':'#E2E8F0','primaryBorderColor':'#29B5E8','lineColor':'#29B5E8','secondaryColor':'#7C3AED','tertiaryColor':'#0F1B2D','background':'#0F1B2D','mainBkg':'#1B2A4A','nodeBorder':'#29B5E8','nodeTextColor':'#E2E8F0','actorTextColor':'#E2E8F0','actorLineColor':'#29B5E8','signalColor':'#29B5E8','signalTextColor':'#E2E8F0','labelBoxBkgColor':'#1B2A4A','labelTextColor':'#E2E8F0','noteBkgColor':'#1E2D4D','noteTextColor':'#E2E8F0','noteBorderColor':'#29B5E8'}}}%%
+sequenceDiagram
+    participant C as Client
+    participant A as Agent API
+    C->>A: POST agent:run (thread_id=0, parent_message_id=0)
+    A-->>C: metadata {message_id: 1, role: "user"}
+    A-->>C: ...streaming events...
+    A-->>C: metadata {message_id: 2, role: "assistant"}
+    A-->>C: response (final)
+    Note over C: Store message_id=2
+    C->>A: POST agent:run (thread_id=0, parent_message_id=2)
+    A-->>C: Follow-up response...
+      </div>
+      <div class="context-box" style="margin-top:0.5rem;">
+        <strong>Key:</strong> After each agent response, capture the assistant's <code>message_id</code> from the metadata event and send it as <code>parent_message_id</code> in the next request.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 11: NON-STREAMING ==================== -->
+<section class="slide" id="non-streaming">
+  <h2 class="anim-fade">Non-Streaming Response (stream: false)</h2>
+  <p class="anim-fade d1">Set <code>stream: false</code> and <code>Accept: application/json</code> to receive a single JSON response. The body is identical to the streaming <code>response</code> event payload.</p>
+
+  <div class="card anim-scale d2" style="max-width:100%;">
+    <pre>{
+  <span class="hl-key">"role"</span>: <span class="hl-str">"assistant"</span>,
+  <span class="hl-key">"content"</span>: [
+    {<span class="hl-key">"type"</span>: <span class="hl-str">"thinking"</span>, <span class="hl-key">"thinking"</span>: {<span class="hl-key">"text"</span>: <span class="hl-str">"The user is asking about..."</span>}},
+
+    {<span class="hl-key">"type"</span>: <span class="hl-str">"tool_use"</span>, <span class="hl-key">"tool_use"</span>: {
+      <span class="hl-key">"tool_use_id"</span>: <span class="hl-str">"&lt;id&gt;"</span>, <span class="hl-key">"type"</span>: <span class="hl-str">"cortex_analyst_text_to_sql"</span>,
+      <span class="hl-key">"name"</span>: <span class="hl-str">"semantic_view_a"</span>, <span class="hl-key">"input"</span>: {<span class="hl-key">"query"</span>: <span class="hl-str">"..."</span>}
+    }},
+
+    {<span class="hl-key">"type"</span>: <span class="hl-str">"tool_result"</span>, <span class="hl-key">"tool_result"</span>: {
+      <span class="hl-key">"tool_use_id"</span>: <span class="hl-str">"&lt;id&gt;"</span>, <span class="hl-key">"status"</span>: <span class="hl-str">"success"</span>,
+      <span class="hl-key">"content"</span>: [{<span class="hl-key">"type"</span>:<span class="hl-str">"json"</span>, <span class="hl-key">"json"</span>: {
+        <span class="hl-key">"sql"</span>: <span class="hl-str">"SELECT ..."</span>,
+        <span class="hl-key">"result_set"</span>: {<span class="hl-key">"data"</span>: [[<span class="hl-str">"Electronics"</span>,<span class="hl-str">"3"</span>]]},
+        <span class="hl-key">"text"</span>: <span class="hl-str">"I can answer with the following SQL."</span>
+      }}]
+    }},
+
+    {<span class="hl-key">"type"</span>: <span class="hl-str">"text"</span>, <span class="hl-key">"text"</span>: <span class="hl-str">"Based on the data, there are 2 product types..."</span>}
+  ],
+  <span class="hl-key">"warnings"</span>: [],
+  <span class="hl-key">"metadata"</span>: {<span class="hl-key">"usage"</span>: {<span class="hl-key">"tokens_consumed"</span>: [...]}, <span class="hl-key">"run_id"</span>: <span class="hl-str">"123-456"</span>}
+}</pre>
+  </div>
+
+  <div class="highlight-box anim-fade d3">
+    <strong>Key Insight:</strong> The non-streaming <code>content</code> array preserves the full tool lifecycle: thinking &rarr; tool_use &rarr; tool_result &rarr; text. Iterate over it to render each block in order.
+  </div>
+</section>
+
+<!-- ==================== SLIDE: UI RENDERING MAP ==================== -->
+<section class="slide" id="ui-render-map">
+  <h2 class="anim-fade">UI Rendering Map</h2>
+  <p class="anim-fade d1">Every visual element maps to <strong style="color:var(--sf-blue);">streaming SSE events</strong> (progressive rendering) and a <strong style="color:var(--green);">non-streaming JSON path</strong> (single response). Both columns per row.</p>
+
+  <div style="display:flex;flex-direction:column;gap:2px;margin-top:0.5rem;">
+
+    <div class="ui-map-header anim-fade d1">
+      <span class="hdr-label"></span>
+      <span class="hdr-stream">&#9889; Streaming (SSE Events)</span>
+      <span class="hdr-json">&#123;&#125; Non-Streaming (JSON)</span>
+    </div>
+
+    <div class="ui-map-phase anim-fade d1" style="color:var(--sf-blue);">Structured Data</div>
+
+    <div class="ui-map-row anim-slide-left d2">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(245,158,11,0.15);color:var(--orange);">&#9638;</div>
+        Data Table
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--orange);">response.table</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.result_set</span>
+        <span class="map-path">.title</span>
+        <span class="map-arrow">|</span>
+        <code style="color:var(--purple);">analyst.delta</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.delta.result_set</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">content[].table.result_set</span>
+        <span class="map-path">.table.title</span>
+        <span class="map-arrow">|</span>
+        <span class="map-path">tool_result.content[].json.result_set</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d2">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(16,185,129,0.15);color:var(--green);">&#9670;</div>
+        Vega-Lite Chart
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--green);">response.chart</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">JSON.parse(.chart_spec)</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">content[].chart.chart_spec</span>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-hint">JSON.parse &rarr; vegaEmbed()</span>
+      </div>
+    </div>
+
+    <div class="ui-map-phase anim-fade d2" style="color:var(--purple);">SQL &amp; Analyst</div>
+
+    <div class="ui-map-row anim-slide-left d3">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(124,58,237,0.15);color:var(--purple);">&#8942;</div>
+        SQL Block
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--purple);">analyst.delta</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.delta.sql</span>
+        <span class="map-arrow">+</span>
+        <span class="map-path">.delta.sql_explanation</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">content[].tool_result.content[].json.sql</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d3">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(41,181,232,0.15);color:var(--sf-blue);">&#10003;</div>
+        Verified Badge
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--purple);">analyst.delta</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.delta.verified_query_used</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">tool_result.content[].json.verified_query_used</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d3">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(124,58,237,0.15);color:var(--purple);">&#128269;</div>
+        Query Link
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--purple);">analyst.delta</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.delta.query_id</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">tool_result.content[].json.query_id</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d3">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(124,58,237,0.15);color:var(--purple);">&#10070;</div>
+        Suggestion Chips
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--purple);">analyst.delta</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.delta.suggestions</span>
+        <span class="map-hint">(index + delta)</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">tool_result.content[].json.suggestions</span>
+      </div>
+    </div>
+
+    <div class="ui-map-phase anim-fade d3" style="color:var(--sf-blue);">Text &amp; Thinking</div>
+
+    <div class="ui-map-row anim-slide-left d4">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(41,181,232,0.15);color:var(--sf-blue);">&#9998;</div>
+        Answer Text
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--sf-blue);">response.text.delta</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.text</span>
+        <span class="map-hint">(append token-by-token)</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">content[].text</span>
+        <span class="map-hint">(where type === "text")</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d4">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(41,181,232,0.15);color:var(--sf-blue);">[1]</div>
+        Citations
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--sf-blue);">response.text.annotation</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.annotation</span>
+        <span class="map-hint">(.doc_title, .text)</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">content[].annotations[]</span>
+        <span class="map-hint">(on text items)</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d4">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(124,58,237,0.15);color:var(--purple);">&#128172;</div>
+        Thinking Panel
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--purple);">response.thinking.delta</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.text</span>
+        <span class="map-arrow">|</span>
+        <code style="color:var(--purple);">analyst.delta</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.delta.think</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">content[].thinking.text</span>
+        <span class="map-hint">(where type === "thinking")</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d4">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(245,158,11,0.15);color:var(--orange);">?</div>
+        Elicitation
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--sf-blue);">response.text.delta</code>
+        <span class="map-hint">where</span>
+        <span class="map-path">.is_elicitation === true</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">content[].is_elicitation === true</span>
+        <span class="map-hint">(on text items)</span>
+      </div>
+    </div>
+
+    <div class="ui-map-phase anim-fade d4" style="color:var(--orange);">Status &amp; Progress</div>
+
+    <div class="ui-map-row anim-slide-left d5">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(245,158,11,0.15);color:var(--orange);">&#8987;</div>
+        Progress Bar
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:var(--orange);">response.status</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.status</span>
+        <span class="map-path">.message</span>
+      </div>
+      <div class="ui-map-json">
+        <span class="ui-map-na">n/a &mdash; no status events in JSON</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d5">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(245,158,11,0.15);color:var(--orange);">&#9881;</div>
+        Tool Loader
+      </div>
+      <div class="ui-map-stream">
+        <code>response.tool_use</code>
+        <span class="map-arrow">&rarr;</span>
+        <code style="color:var(--orange);">tool_result.status</code>
+        <span class="map-arrow">&rarr;</span>
+        <code style="color:var(--green);">response.tool_result</code>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">content[].tool_use</span>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">content[].tool_result</span>
+        <span class="map-hint">(sequential)</span>
+      </div>
+    </div>
+
+    <div class="ui-map-row anim-slide-left d5">
+      <div class="ui-map-label">
+        <div class="ui-icon" style="background:rgba(239,68,68,0.15);color:#EF4444;">&#9888;</div>
+        Error / Warning
+      </div>
+      <div class="ui-map-stream">
+        <code style="color:#EF4444;">error</code>
+        <span class="map-arrow">&rarr;</span>
+        <span class="map-path">.code .message .request_id</span>
+        <span class="map-arrow">|</span>
+        <code style="color:var(--orange);">response.warning</code>
+      </div>
+      <div class="ui-map-json">
+        <span class="map-path">.warnings[]</span>
+        <span class="map-hint">(top-level array)</span>
+        <span class="map-arrow">|</span>
+        <span class="map-hint">HTTP error body</span>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="context-box anim-fade d6" style="margin-top:0.6rem;">
+    <strong>Correlation key:</strong> Use <code>tool_use_id</code> to bind <code>response.tool_use</code> &harr; <code>analyst.delta</code> &harr; <code>response.tool_result</code> &harr; <code>response.table</code> / <code>response.chart</code>. In non-streaming, match by <code>tool_use_id</code> across <code>content[]</code> items of types <code>tool_use</code> and <code>tool_result</code>.
+  </div>
+
+  <div class="highlight-box anim-fade d7">
+    <strong>Key difference:</strong> Streaming gives you <strong>14+ granular SSE events</strong> for progressive UI. Non-streaming gives you <strong>one JSON response</strong> with a <code>content[]</code> array &mdash; iterate by <code>item.type</code> and read <code>item[item.type]</code>. The <code>warnings</code> and <code>metadata</code> move to top-level keys.
+  </div>
+</section>
+
+<!-- ==================== SLIDE 12: CONTENT TYPE MAPPING ==================== -->
+<section class="slide" id="content-mapping">
+  <h2 class="anim-fade">MessageContentItem &mdash; Content Type Map</h2>
+  <p class="anim-fade d1">The <code>content</code> array in the final response contains items of 6 types. Each maps to a specific UI component.</p>
+
+  <div class="card-grid card-grid-3">
+    <div class="card anim-fade d2" style="border-left:3px solid var(--purple);">
+      <h4>thinking</h4>
+      <p><code>ThinkingContent</code></p>
+      <p style="font-size:0.72rem;">Agent reasoning text + signature</p>
+      <p style="color:var(--purple);font-size:0.72rem;font-weight:600;">UI: Collapsible reasoning panel</p>
+    </div>
+    <div class="card anim-fade d3" style="border-left:3px solid var(--sf-blue);">
+      <h4>text</h4>
+      <p>String with optional <code>annotations</code></p>
+      <p style="font-size:0.72rem;">The final answer with citations</p>
+      <p style="color:var(--sf-blue);font-size:0.72rem;font-weight:600;">UI: Markdown text + citation footnotes</p>
+    </div>
+    <div class="card anim-fade d4" style="border-left:3px solid var(--green);">
+      <h4>tool_use</h4>
+      <p><code>ToolUse</code></p>
+      <p style="font-size:0.72rem;">Tool invocation request with input</p>
+      <p style="color:var(--green);font-size:0.72rem;font-weight:600;">UI: Tool calling indicator</p>
+    </div>
+    <div class="card anim-fade d5" style="border-left:3px solid var(--green);">
+      <h4>tool_result</h4>
+      <p><code>ToolResult</code></p>
+      <p style="font-size:0.72rem;">Tool output: JSON or text content</p>
+      <p style="color:var(--green);font-size:0.72rem;font-weight:600;">UI: Expandable result card</p>
+    </div>
+    <div class="card anim-fade d6" style="border-left:3px solid var(--orange);">
+      <h4>table</h4>
+      <p><code>TableContent</code></p>
+      <p style="font-size:0.72rem;">SQL result set with metadata + title</p>
+      <p style="color:var(--orange);font-size:0.72rem;font-weight:600;">UI: Data table component</p>
+    </div>
+    <div class="card anim-fade d7" style="border-left:3px solid var(--orange);">
+      <h4>chart</h4>
+      <p><code>ChartContent</code></p>
+      <p style="font-size:0.72rem;">Vega-Lite spec (stringified JSON)</p>
+      <p style="color:var(--orange);font-size:0.72rem;font-weight:600;">UI: Vega-Lite chart render</p>
+    </div>
+  </div>
+
+  <div class="context-box anim-fade d7">
+    <strong>Dispatch Pattern:</strong>
+    <pre style="background:transparent;border:none;padding:0;margin:0.3rem 0;box-shadow:none;">content.forEach(item => {
+  <span class="hl-key">switch</span>(item.type) {
+    <span class="hl-key">case</span> <span class="hl-str">'thinking'</span>:  renderThinking(item.thinking);  <span class="hl-key">break</span>;
+    <span class="hl-key">case</span> <span class="hl-str">'text'</span>:      renderText(item.text);          <span class="hl-key">break</span>;
+    <span class="hl-key">case</span> <span class="hl-str">'tool_use'</span>:  renderToolUse(item.tool_use);   <span class="hl-key">break</span>;
+    <span class="hl-key">case</span> <span class="hl-str">'tool_result'</span>: renderToolResult(item.tool_result); <span class="hl-key">break</span>;
+    <span class="hl-key">case</span> <span class="hl-str">'table'</span>:    renderTable(item.table);         <span class="hl-key">break</span>;
+    <span class="hl-key">case</span> <span class="hl-str">'chart'</span>:    renderChart(item.chart);         <span class="hl-key">break</span>;
+  }
+});</pre>
+  </div>
+</section>
+
+<!-- ==================== SLIDE 13: FULL FLOW EXAMPLE ==================== -->
+<section class="slide" id="flow-example">
+  <h2 class="anim-fade">Complete Streaming Flow Example</h2>
+  <p class="anim-fade d1">A typical agent interaction with Cortex Analyst, showing every event in order.</p>
+
+  <div class="mermaid anim-scale d2">
+%%{init: {'theme':'dark','themeVariables':{'primaryColor':'#1B2A4A','primaryTextColor':'#E2E8F0','primaryBorderColor':'#29B5E8','lineColor':'#29B5E8','secondaryColor':'#7C3AED','tertiaryColor':'#0F1B2D','background':'#0F1B2D','mainBkg':'#1B2A4A','nodeBorder':'#29B5E8','nodeTextColor':'#E2E8F0','actorTextColor':'#E2E8F0','actorLineColor':'#29B5E8','signalColor':'#29B5E8','signalTextColor':'#E2E8F0','labelBoxBkgColor':'#1B2A4A','labelTextColor':'#E2E8F0','noteBkgColor':'#1E2D4D','noteTextColor':'#E2E8F0','noteBorderColor':'#29B5E8'}}}%%
+sequenceDiagram
+    participant U as User / Client
+    participant A as Agent API
+    participant T as Tool (Analyst)
+
+    U->>A: POST agent:run {"messages":[{"role":"user","content":[{"type":"text","text":"Total revenue 2023?"}]}]}
+
+    Note over A: Phase 1 - Planning
+    A-->>U: metadata {message_id: 1}
+    A-->>U: response.status {status: "planning"}
+
+    Note over A: Phase 2 - Thinking
+    A-->>U: response.thinking.delta {text: "The user is asking for..."}
+    A-->>U: response.thinking.delta {text: " revenue data..."}
+    A-->>U: response.thinking {text: "The user is asking for revenue data..."}
+
+    Note over A: Phase 3 - Tool Execution
+    A-->>U: response.tool_use {type: "cortex_analyst_text_to_sql", name: "my_sv"}
+    A-->>U: response.status {status: "executing_tool"}
+    A->>T: Execute Analyst
+    T-->>A: Results
+    A-->>U: response.tool_result.analyst.delta {delta: {think: "..."}}
+    A-->>U: response.tool_result.analyst.delta {delta: {sql: "SELECT..."}}
+    A-->>U: response.tool_result.analyst.delta {delta: {query_id: "..."}}
+    A-->>U: response.tool_result.analyst.delta {delta: {result_set: {...}}}
+    A-->>U: response.tool_result {status: "success", content: [...]}
+
+    Note over A: Phase 4 - Rich Content
+    A-->>U: response.table {title: "Revenue 2023", result_set: {...}}
+    A-->>U: response.chart {chart_spec: "{...vega-lite...}"}
+
+    Note over A: Phase 5 - Final Answer
+    A-->>U: response.status {status: "proceeding_to_answer"}
+    A-->>U: response.text.delta {text: "The total"}
+    A-->>U: response.text.delta {text: " revenue for 2023"}
+    A-->>U: response.text.delta {text: " was $4.2M."}
+    A-->>U: response.text.annotation {annotation: {type: "cortex_search_citation",...}}
+    A-->>U: response.text {text: "The total revenue for 2023 was $4.2M.", annotations: [...]}
+
+    Note over A: Phase 6 - Terminal
+    A-->>U: metadata {message_id: 2, role: "assistant"}
+    A-->>U: response {role: "assistant", content: [...], metadata: {usage: {...}}}
+  </div>
+
+  <div class="highlight-box anim-fade d3">
+    <strong>The <code>response</code> event (last event) is the complete aggregation.</strong> Non-streaming clients only need this single object. Streaming clients can use all preceding events for progressive UI rendering.
+  </div>
+</section>
+
+<!-- ==================== SLIDE 14: SCHEMA REFERENCE ==================== -->
+<section class="slide" id="schemas">
+  <h2 class="anim-fade">Quick Schema Reference</h2>
+  <p class="anim-fade d1">Key schemas and where they appear in the response.</p>
+
+  <div class="card-grid card-grid-2">
+    <div class="card anim-fade d2">
+      <h4>Request Schemas</h4>
+      <table>
+        <tr><th>Schema</th><th>Used In</th></tr>
+        <tr><td><code>Message</code></td><td>Request body <code>messages</code></td></tr>
+        <tr><td><code>ToolChoice</code></td><td>Request body <code>tool_choice</code></td></tr>
+        <tr><td><code>Tool</code> / <code>ToolSpec</code></td><td>Request body <code>tools</code></td></tr>
+        <tr><td><code>ToolResource</code></td><td>Request body <code>tool_resources</code></td></tr>
+        <tr><td><code>ModelConfig</code></td><td>Request body <code>models</code></td></tr>
+        <tr><td><code>AgentInstructions</code></td><td>Request body <code>instructions</code></td></tr>
+        <tr><td><code>OrchestrationConfig</code></td><td>Request body <code>orchestration</code></td></tr>
+        <tr><td><code>BudgetConfig</code></td><td>Inside <code>OrchestrationConfig</code></td></tr>
+        <tr><td><code>ExecutionEnvironment</code></td><td>Inside <code>ToolResource</code></td></tr>
+      </table>
+    </div>
+    <div class="card anim-fade d3">
+      <h4>Response Schemas</h4>
+      <table>
+        <tr><th>Schema</th><th>Used In</th></tr>
+        <tr><td><code>MessageContentItem</code></td><td>Response <code>content[]</code></td></tr>
+        <tr><td><code>ThinkingContent</code></td><td>Content type <code>thinking</code></td></tr>
+        <tr><td><code>TableContent</code></td><td>Content type <code>table</code></td></tr>
+        <tr><td><code>ChartContent</code></td><td>Content type <code>chart</code></td></tr>
+        <tr><td><code>ToolUse</code></td><td>Content type <code>tool_use</code></td></tr>
+        <tr><td><code>ToolResult</code></td><td>Content type <code>tool_result</code></td></tr>
+        <tr><td><code>Annotation</code></td><td>Inside <code>response.text</code></td></tr>
+        <tr><td><code>ResultSet</code></td><td>Inside tables &amp; analyst deltas</td></tr>
+        <tr><td><code>ResponseMetadata</code></td><td>Response <code>metadata</code></td></tr>
+        <tr><td><code>UsageMetadata</code></td><td>Inside <code>ResponseMetadata</code></td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="two-col" style="margin-top:0.8rem;">
+    <div class="card anim-fade d4">
+      <h4>ToolResource Variants</h4>
+      <table>
+        <tr><th>Type</th><th>Key Fields</th></tr>
+        <tr><td><code>cortex_analyst_text_to_sql</code></td><td><code>semantic_model_file</code> or <code>semantic_view</code>, <code>execution_environment</code></td></tr>
+        <tr><td><code>cortex_search</code></td><td>Search service configuration</td></tr>
+        <tr><td><code>generic</code> (function)</td><td><code>identifier</code> (UDF FQN), <code>execution_environment</code></td></tr>
+        <tr><td><code>web_search</code></td><td>Web search configuration</td></tr>
+      </table>
+    </div>
+    <div class="card anim-fade d5">
+      <h4>ToolResultContent Variants</h4>
+      <table>
+        <tr><th>Type</th><th>Description</th></tr>
+        <tr><td><code>json</code></td><td>Structured output object (schema varies by tool)</td></tr>
+        <tr><td><code>text</code></td><td>Plain text result</td></tr>
+      </table>
+      <div class="warning-box" style="margin-top:0.5rem;">
+        <strong>Cost Tip:</strong> Requests time out after 15 minutes. Use <code>orchestration.budget</code> to set token/time limits and avoid runaway costs.
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'dark',
+  themeVariables: {
+    primaryColor: '#1B2A4A',
+    primaryTextColor: '#E2E8F0',
+    primaryBorderColor: '#29B5E8',
+    lineColor: '#29B5E8',
+    background: '#0F1B2D'
+  },
+  flowchart: { useMaxWidth: true, htmlLabels: true },
+  sequence: { useMaxWidth: true, mirrorActors: false }
+});
+
+const MERMAID_THEMES = {
+  dark: {
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1B2A4A', primaryTextColor: '#E2E8F0',
+      primaryBorderColor: '#29B5E8', lineColor: '#29B5E8', background: '#0F1B2D'
+    }
+  },
+  light: {
+    theme: 'default',
+    themeVariables: {
+      primaryColor: '#e0f2fe', primaryTextColor: '#383838',
+      primaryBorderColor: '#29B5E8', lineColor: '#29B5E8', background: '#ffffff'
+    }
+  }
+};
+
+function updateSwitchUI(isLight) {
+  document.getElementById('switch-track').classList.toggle('on', isLight);
+  document.getElementById('icon-dark').classList.toggle('active', !isLight);
+  document.getElementById('icon-light').classList.toggle('active', isLight);
+}
+
+function toggleTheme() {
+  const html = document.documentElement;
+  const isDark = html.getAttribute('data-theme') !== 'light';
+  const next = isDark ? 'light' : 'dark';
+  html.setAttribute('data-theme', next);
+  updateSwitchUI(isDark);
+  localStorage.setItem('theme', next);
+  reinitMermaid(next);
+}
+
+async function reinitMermaid(theme) {
+  const els = document.querySelectorAll('.mermaid');
+  if (!els.length) return;
+  const cfg = MERMAID_THEMES[theme];
+  mermaid.initialize({ startOnLoad: false, ...cfg, flowchart: { useMaxWidth: true, htmlLabels: true }, sequence: { useMaxWidth: true, mirrorActors: false } });
+  for (const el of els) {
+    const src = el.getAttribute('data-mermaid-src') || el.textContent;
+    if (!el.getAttribute('data-mermaid-src')) el.setAttribute('data-mermaid-src', src);
+    el.removeAttribute('data-processed');
+    el.innerHTML = src;
+  }
+  await mermaid.run({ nodes: els });
+}
+
+(function() {
+  const saved = localStorage.getItem('theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.addEventListener('DOMContentLoaded', () => {
+      updateSwitchUI(true);
+      reinitMermaid('light');
+    });
+  }
+})();
+
+// Progress bar
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  document.getElementById('progress').style.width = pct + '%';
+});
+
+// Scroll-spy + animations
+const sections = document.querySelectorAll('.slide');
+const navLinks = document.querySelectorAll('#sidebar a');
+const animEls = document.querySelectorAll('.anim-fade, .anim-blur, .anim-scale, .anim-slide-left, .anim-slide-right');
+
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.querySelectorAll('.anim-fade, .anim-blur, .anim-scale, .anim-slide-left, .anim-slide-right')
+        .forEach(el => el.classList.add('visible'));
+      const id = e.target.getAttribute('id');
+      navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+    } else {
+      e.target.querySelectorAll('.anim-fade, .anim-blur, .anim-scale, .anim-slide-left, .anim-slide-right')
+        .forEach(el => el.classList.remove('visible'));
+    }
+  });
+}, { threshold: 0.15 });
+
+sections.forEach(s => io.observe(s));
+</script>
+</body>
+</html>
