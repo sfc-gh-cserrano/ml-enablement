@@ -204,44 +204,42 @@ graph LR
             <h2>Prerequisites</h2>
             <table>
                 <tr><th>Requirement</th><th>Details</th></tr>
-                <tr><td>Snowflake Account</td><td>SYSADMIN + ACCOUNTADMIN access</td></tr>
-                <tr><td>Cortex Code</td><td>Desktop app installed and connected</td></tr>
-                <tr><td>Workspace</td><td>Snowflake notebook for setup SQL</td></tr>
+                <tr><td>Snowflake Account</td><td>ACCOUNTADMIN access</td></tr>
+                <tr><td>Cortex Code Desktop</td><td>Installed and connected to your Snowflake account</td></tr>
+                <tr><td>Snowflake Workspace</td><td>For running the setup files (Step 1 only)</td></tr>
             </table>
         </section>
 
         <section id="step1">
-            <h2>Step 1: Data Setup <span class="pill pill-orange">Manual</span></h2>
-            <p>The only step requiring manual execution. Everything after this is done through Cortex Code prompts.</p>
+            <h2>Step 1: Data Setup <span class="pill pill-orange">Snowflake Workspace</span></h2>
+            <p>The only step that runs in a Snowflake Workspace. Steps 2, 3, and 4 run entirely in <strong>Cortex Code Desktop</strong>.</p>
+
+            <div class="alert alert-info">
+                <span class="material-icons" style="color:var(--sf-blue)">info</span>
+                <div>Open each file directly in the Workspace file browser and click <strong>Run All</strong>. No need to create cells manually.</div>
+            </div>
+
+            <table>
+                <tr><th>#</th><th>File</th><th>Cell Type</th><th>What it does</th></tr>
+                <tr><td>1</td><td><code>Setup/01_setup.sql</code></td><td>SQL</td><td>Creates warehouse, DB, schemas, stages, tables</td></tr>
+                <tr><td>2</td><td><code>Setup/02_copy_files.py</code></td><td>Python</td><td>Uploads CSVs and skills to stages</td></tr>
+                <tr><td>3</td><td><code>Setup/03_load_data.sql</code></td><td>SQL</td><td>Loads data into tables, verifies counts</td></tr>
+            </table>
 
             <h3>1.1 Create objects (SQL cell)</h3>
-            <p>Open a Snowflake Workspace and paste <code>Setup/setup.sql</code> into a SQL cell. This creates:</p>
+            <p>Paste <code>Setup/01_setup.sql</code> into a SQL cell. Runs as ACCOUNTADMIN and creates:</p>
             <ul>
                 <li>Warehouse <code>HOL_WH</code> (XS, auto-suspend 60s)</li>
                 <li>Database <code>HOL_COCO_CWORK</code> with schemas: DATA, TOOLS, AGENTS</li>
                 <li>Three tables with UUID primary keys</li>
-                <li>Internal stage <code>HOL_STAGE</code> for data</li>
-                <li>Skills stage <code>SKILLS_STAGE</code> in TOOLS schema</li>
+                <li>Data stage <code>HOL_STAGE</code> and skills stage <code>SKILLS_STAGE</code></li>
             </ul>
 
-            <h3>1.2 Upload CSV files and skills (Python cell)</h3>
-<pre><span style="color:var(--text-muted)"># Run in a Python cell in your Workspace</span>
-from snowflake.snowpark.context import get_active_session
-session = get_active_session()
-
-<span style="color:var(--text-muted)"># Upload data files</span>
-session.file.put("data/dim_store.csv", "@HOL_STAGE/dim_store", auto_compress=True, overwrite=True)
-session.file.put("data/dim_item.csv", "@HOL_STAGE/dim_item", auto_compress=True, overwrite=True)
-session.file.put("data/fact_item_sales.csv", "@HOL_STAGE/fact_item_sales", auto_compress=True, overwrite=True)
-
-<span style="color:var(--text-muted)"># Upload agent skills</span>
-session.sql("USE SCHEMA TOOLS").collect()
-session.file.put("../Skills/anomaly_detection/SKILL.md", "@SKILLS_STAGE/skills/anomaly_detection/", auto_compress=False, overwrite=True)
-session.file.put("../Skills/sales_report/SKILL.md", "@SKILLS_STAGE/skills/sales_report/", auto_compress=False, overwrite=True)
-session.sql("USE SCHEMA DATA").collect()</pre>
+            <h3>1.2 Upload files (Python cell)</h3>
+            <p>Paste <code>Setup/02_copy_files.py</code> into a Python cell. Uploads CSVs to <code>@HOL_STAGE</code> and skill SKILL.md files to <code>@SKILLS_STAGE</code>.</p>
 
             <h3>1.3 Load data (SQL cell)</h3>
-            <p>Run the COPY INTO statements (steps 7-8 in setup.sql) to load dimensions and facts.</p>
+            <p>Paste <code>Setup/03_load_data.sql</code> into a SQL cell. Loads dimensions and facts via COPY INTO + staging join.</p>
 
             <div class="alert alert-success">
                 <span class="material-icons" style="color:var(--success)">check_circle</span>
@@ -250,8 +248,8 @@ session.sql("USE SCHEMA DATA").collect()</pre>
         </section>
 
         <section id="step2">
-            <h2>Step 2: Create Semantic View <span class="pill pill-blue">Cortex Code</span></h2>
-            <p>Open <code>Prompts/semantic_view.md</code> in Cortex Code and run:</p>
+            <h2>Step 2: Create Semantic View <span class="pill pill-blue">Cortex Code Desktop</span></h2>
+            <p>In the <strong>Cortex Code Desktop</strong> chat panel, type the following:</p>
 <pre>/semantic-view @semantic_view.md</pre>
 
             <h3>What CoCo does</h3>
@@ -283,8 +281,8 @@ session.sql("USE SCHEMA DATA").collect()</pre>
         </section>
 
         <section id="step3">
-            <h2>Step 3: Create Cortex Agent <span class="pill pill-purple">Cortex Code</span></h2>
-            <p>Open <code>Prompts/agent.md</code> in Cortex Code and run:</p>
+            <h2>Step 3: Create Cortex Agent <span class="pill pill-purple">Cortex Code Desktop</span></h2>
+            <p>In the <strong>Cortex Code Desktop</strong> chat panel, type:</p>
 <pre>/cortex-agent @agent.md</pre>
 
             <h3>What CoCo does</h3>
@@ -325,8 +323,8 @@ session.sql("USE SCHEMA DATA").collect()</pre>
         </section>
 
         <section id="step4">
-            <h2>Step 4: Run Evaluations <span class="pill pill-green">Cortex Code</span></h2>
-            <p>Attach <code>Prompts/evaluations.md</code> in Cortex Code:</p>
+            <h2>Step 4: Run Evaluations <span class="pill pill-green">Cortex Code Desktop</span></h2>
+            <p>In the <strong>Cortex Code Desktop</strong> chat panel, type:</p>
 <pre>@evaluations.md</pre>
 
             <h3>What CoCo does</h3>
@@ -435,13 +433,14 @@ erDiagram
 <pre>coco_cowork_agent_hol/
 ├── README.md
 ├── Setup/
-│   ├── setup.sql                ← Run this first (Step 1)
+│   ├── 01_setup.sql             ← SQL: warehouse, DB, schemas, stages, tables
+│   ├── 02_copy_files.py         ← Python: upload CSVs and skills
+│   ├── 03_load_data.sql         ← SQL: load data into tables
 │   ├── data/
 │   │   ├── dim_store.csv        ← 100 convenience stores
 │   │   ├── dim_item.csv         ← 100 hot food items
 │   │   └── fact_item_sales.csv  ← 539K transactions
-│   ├── generate_data.py
-│   └── upload_to_stage.py
+│   └── generate_data.py
 ├── Skills/
 │   ├── anomaly_detection/
 │   │   └── SKILL.md             ← Anomaly detection skill
